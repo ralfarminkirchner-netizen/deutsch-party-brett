@@ -195,9 +195,9 @@ export class BoardRenderer {
           </filter>
         </defs>
         <!-- Layered paths for a hand-drawn look -->
-        <path d="${d}" style="fill:none; stroke:rgba(0,0,0,0.6); stroke-width:0.8; vector-effect:non-scaling-stroke; filter: url(#charcoal-path); stroke-linecap: round;" />
-        <path d="${d}" style="fill:none; stroke:rgba(255,255,255,0.5); stroke-width:0.5; vector-effect:non-scaling-stroke; stroke-dasharray: 1 3; filter: url(#charcoal-path);" />
-        <path d="${d}" style="fill:none; stroke:var(--color-primary); stroke-width:0.4; vector-effect:non-scaling-stroke; stroke-dasharray: 0.5 2; opacity: 0.8;" />
+        <path d="${d}" style="fill:none; stroke:rgba(0,0,0,0.6); stroke-width:0.8; filter: url(#charcoal-path); stroke-linecap: round;" />
+        <path d="${d}" style="fill:none; stroke:rgba(255,255,255,0.5); stroke-width:0.5; stroke-dasharray: 1 3; filter: url(#charcoal-path);" />
+        <path d="${d}" style="fill:none; stroke:var(--color-primary); stroke-width:0.4; stroke-dasharray: 0.5 2; opacity: 0.8;" />
       </svg>
     `;
   }

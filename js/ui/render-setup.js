@@ -121,9 +121,6 @@ export class SetupRenderer {
   }
 
   _renderPlayers(el) {
-    el.innerHTML = `
-      <div style="padding: 10px 0;">
-        <div style="
     const tapeColors = ['pink', 'yellow', 'blue', 'green'];
     const organicBlobs = [
       '30% 70% 70% 30% / 30% 30% 70% 70%',

@@ -7,3 +7,6 @@ assets/img/backgrounds/*.JPG
 assets/img/backgrounds/*.jpeg
 assets/img/backgrounds/*.heic
 .railwayignore
+.npm-cache/
+.local-tools/
+

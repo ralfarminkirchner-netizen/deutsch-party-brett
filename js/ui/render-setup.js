@@ -124,43 +124,59 @@ export class SetupRenderer {
     el.innerHTML = `
       <div style="padding: 10px 0;">
         <div style="
-          background: white; border-radius: 20px;
-          padding: 24px 30px; margin-bottom: 24px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-          text-align: center;
-        ">
-          <h2 style="font-family:'Fredoka One',cursive; font-size:clamp(32px,4vw,52px); color:#E91E63; margin:0 0 8px;">Wer spielt mit? 🐾</h2>
-          <p style="font-family:'Nunito',sans-serif; font-size:clamp(18px,2vw,26px); color:#555; margin:0;">Tippe auf die Tiere, die mitspielen sollen!</p>
-        </div>
+    const tapeColors = ['pink', 'yellow', 'blue', 'green'];
+    const organicBlobs = [
+      '30% 70% 70% 30% / 30% 30% 70% 70%',
+      '60% 40% 30% 70% / 60% 30% 70% 40%',
+      '40% 60% 70% 30% / 40% 50% 60% 50%',
+      '50% 50% 40% 60% / 50% 60% 40% 50%',
+      '70% 30% 50% 50% / 40% 70% 30% 60%'
+    ];
+    
+    // Default selectedBgIndex to 0 if not set
+    if (this.selectedBgIndex === undefined) this.selectedBgIndex = 0;
 
+    el.innerHTML = `
+      <div class="setup-step-content active">
+        <div class="setup-header">
+          <h2>Wer spielt mit?</h2>
+          <p>Tippe einfach auf die Tiere, die mitspielen sollen!</p>
+        </div>
+        
         <div class="char-picker-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; margin-bottom: 30px;">
           ${CHARACTERS.map((c, i) => {
             const isSelected = this.players.some(p => p.colorIndex === i);
+            const blobRadius = organicBlobs[i % organicBlobs.length];
+            const rotation = (i % 2 === 0 ? 3 : -2) + Math.sin(i) * 3;
+            const tapeColor = tapeColors[i % tapeColors.length];
             return `
-              <div class="char-pick-option ${isSelected ? 'selected' : ''}" data-char-idx="${i}" style="cursor: pointer; position: relative; border-radius: 40% 60% 50% 50% / 50% 50% 50% 50%; background: rgba(255,255,255,0.4); padding: 5px;">
+              <div class="char-pick-option cardboard-chip ${isSelected ? 'selected cardboard-pink' : ''}" data-char-idx="${i}" 
+                   style="cursor: pointer; position: relative; border-radius: ${blobRadius}; padding: 10px; transform: rotate(${rotation}deg); transition: transform 0.2s var(--ease-bounce);">
+                ${isSelected ? `<div class="washi-tape ${tapeColor} rotated-left" style="top: -10px; left: 10px; width: 40px; height: 14px; z-index: 5;"></div>` : ''}
                 ${renderCharacterAvatar(i, 110)}
-                <span class="char-pick-name" style="font-size: 13px; font-weight: bold;">${c.name_de}</span>
-                ${isSelected ? '<div style="position:absolute; top:-5px; right:-5px; background:var(--color-accent); color:#000; border:2px solid #000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10;">✓</div>' : ''}
+                <span class="char-pick-name" style="font-size: 14px; font-family: var(--font-family-display); font-weight: bold; display: block; text-align: center;">${c.name_de}</span>
+                ${isSelected ? '<div style="position:absolute; top:-5px; right:-5px; background:var(--color-accent); color:#000; border:2px solid #000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; font-family: var(--font-handwritten);">✓</div>' : ''}
               </div>
             `;
           }).join('')}
         </div>
         
-        <div class="setup-header" style="margin-top: 30px; margin-bottom: 10px;">
+        <div class="setup-header" style="margin-top: 40px; margin-bottom: 15px;">
           <h2>Hintergrund-Landschaft</h2>
+          <div class="washi-tape yellow rotated-right" style="margin: -25px auto 10px; width: 120px;"></div>
         </div>
-        <div class="bg-picker-grid" id="bg-picker" style="display:flex; gap:15px; overflow-x: auto; padding: 10px 5px; scrollbar-width: thin; pointer-events: auto;">
-          ${BACKGROUNDS.map((bg) => {
+        <div class="bg-picker-grid" id="bg-picker" style="display:flex; gap:15px; overflow-x: auto; padding-bottom: 20px; padding-top: 10px;">
+          ${BACKGROUNDS.map((bg, idx) => {
+            const blobRadius = organicBlobs[(idx + 2) % organicBlobs.length];
             const isSelected = this.settings.selectedBoardId === bg.id;
             return `
-              <div class="bg-pick-option ${isSelected ? 'selected' : ''}" 
-                   data-bg-id="${bg.id}" 
-                   data-bg-url="${bg.url}"
-                   style="cursor:pointer; border: 4px solid ${isSelected ? 'var(--color-primary)' : 'rgba(0,0,0,0.1)'}; border-radius: 15px; padding: 8px; text-align:center; min-width: 170px; background: ${isSelected ? '#fff' : 'rgba(255,255,255,0.4)'}; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; z-index: 20;">
-                <div class="bg-preview" style="background-image: url('${bg.url}'); background-size: cover; background-position: center; width: 100%; height: 100px; border-radius: 10px; margin-bottom: 8px; pointer-events: none;"></div>
-                <span style="font-size: 13px; font-weight: bold; color: ${isSelected ? '#000' : '#555'}; pointer-events: none;">${bg.name}</span>
-                ${isSelected ? '<div style="position:absolute; top:-10px; right:-10px; background:var(--color-primary); color:white; border:2px solid #fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; z-index:30;">✓</div>' : ''}
-              </div>
+            <div class="bg-pick-option cardboard-chip ${isSelected ? 'selected cardboard-blue' : ''}" 
+                 data-bg-id="${bg.id}" data-bg-url="${bg.url}"
+                 style="cursor:pointer; border-radius: ${blobRadius}; padding: 8px; text-align:center; min-width: 150px; flex-shrink: 0; position: relative; transition: all 0.2s ease;">
+              ${isSelected ? `<div class="pin" style="top: 5px; left: 50%; transform: translateX(-50%);"></div>` : ''}
+              <div class="bg-preview" style="background-image: url('${bg.url}'); background-size: cover; background-position: center; width: 100%; height: 90px; border-radius: ${organicBlobs[(idx + 1) % organicBlobs.length]}; margin-bottom: 8px; border: 2px solid rgba(0,0,0,0.1); pointer-events: none;"></div>
+              <span style="font-size: 14px; font-family: var(--font-family-display); font-weight: bold; pointer-events: none;">${bg.name}</span>
+            </div>
             `;
           }).join('')}
         </div>
@@ -185,11 +201,6 @@ export class SetupRenderer {
         this.render();
       });
     });
-
-    // Apply initial CSS background variable if it exists
-    if (this.settings.selectedBoard) {
-      document.documentElement.style.setProperty('--game-background-img', `url('../../${this.settings.selectedBoard}')`);
-    }
 
     // Background Picker Click Handler
     el.querySelectorAll('.bg-pick-option').forEach(opt => {

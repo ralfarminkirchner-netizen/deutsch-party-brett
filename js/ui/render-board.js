@@ -187,8 +187,17 @@ export class BoardRenderer {
     }
 
     return `
-      <svg class="board-connections" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path d="${d}" class="field-path" style="fill:none; stroke:rgba(0,0,0,0.15); stroke-width:0.8; vector-effect:non-scaling-stroke; stroke-dasharray:4 4;" />
+      <svg class="board-connections" viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;">
+        <defs>
+          <filter id="charcoal-path" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+        <!-- Layered paths for a hand-drawn look -->
+        <path d="${d}" style="fill:none; stroke:rgba(0,0,0,0.6); stroke-width:0.8; vector-effect:non-scaling-stroke; filter: url(#charcoal-path); stroke-linecap: round;" />
+        <path d="${d}" style="fill:none; stroke:rgba(255,255,255,0.5); stroke-width:0.5; vector-effect:non-scaling-stroke; stroke-dasharray: 1 3; filter: url(#charcoal-path);" />
+        <path d="${d}" style="fill:none; stroke:var(--color-primary); stroke-width:0.4; vector-effect:non-scaling-stroke; stroke-dasharray: 0.5 2; opacity: 0.8;" />
       </svg>
     `;
   }

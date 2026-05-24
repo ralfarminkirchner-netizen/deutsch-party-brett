@@ -1,0 +1,9 @@
+assets/img/extracted/
+assets/img/Gemini_*.png
+assets/img/*.JPG
+assets/img/*.jpeg
+assets/img/backgrounds/Gemini_*.png
+assets/img/backgrounds/*.JPG
+assets/img/backgrounds/*.jpeg
+assets/img/backgrounds/*.heic
+.railwayignore

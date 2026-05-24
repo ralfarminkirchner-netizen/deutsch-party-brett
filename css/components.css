@@ -1,0 +1,74 @@
+/* ============================================
+   COMPONENTS — Hand-Cut Craft Style
+   ============================================ */
+
+/* ── Hand-Cut 'Torn' Edges via Clip-Path ── */
+.cardboard-chip {
+  position: relative;
+  background-color: white;
+  background-image: var(--texture-grain);
+  border: 1.5px solid rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-pappe-md);
+  /* Organic hand-cut look */
+  clip-path: polygon(
+    2% 1%, 15% 0%, 30% 2%, 45% 0%, 60% 1%, 75% 0%, 90% 2%, 99% 1%,
+    100% 15%, 98% 30%, 100% 45%, 99% 60%, 100% 75%, 98% 90%, 99% 99%,
+    85% 100%, 70% 98%, 55% 100%, 40% 99%, 25% 100%, 10% 98%, 1% 100%,
+    0% 85%, 2% 70%, 1% 55%, 0% 40%, 2% 25%, 0% 10%
+  );
+  padding: var(--space-md);
+  transition: transform 0.2s var(--ease-bounce);
+}
+
+.cardboard-chip:hover {
+  transform: rotate(1deg) scale(1.02);
+  box-shadow: var(--shadow-pappe-lg);
+}
+
+/* ── Washi-Tape ── */
+.washi-tape {
+  position: absolute;
+  height: 35px;
+  width: 120px;
+  background-image: var(--texture-fiber);
+  background-blend-mode: multiply;
+  opacity: 0.85;
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.1));
+  z-index: 100;
+  pointer-events: none;
+  /* Torn ends effect */
+  mask-image: linear-gradient(90deg, transparent 5%, black 20%, black 80%, transparent 95%);
+}
+
+.washi-tape.pink   { background-color: #FF85A1; }
+.washi-tape.yellow { background-color: #FFD93D; }
+.washi-tape.blue   { background-color: #A0C4FF; }
+.washi-tape.green  { background-color: #9BF6FF; }
+
+/* ── Hand-drawn Icons ── */
+.icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(1px 1px 0px white);
+}
+
+/* ── Specialized Panels ── */
+.panel-craft {
+  background: white;
+  background-image: var(--texture-grain);
+  border: 2px solid #5D4037;
+  border-radius: 8px 30px 5px 40px;
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-pappe-xl);
+}
+
+/* ── Floating Animation ── */
+.animate-float {
+  animation: float-logic 4s infinite ease-in-out;
+}
+
+@keyframes float-logic {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}

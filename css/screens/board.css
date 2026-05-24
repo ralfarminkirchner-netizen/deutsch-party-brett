@@ -1,0 +1,8 @@
+/* board.css — Moved all into base.css for v4.0 */
+/* Keeping this file to avoid 404, all rules live in base.css */
+
+/* Board background theme variations (set by JS on .board-area) */
+.board-area[data-theme="forest"]  { background: #c8e6c9 url('assets/img/backgrounds/board_forest.jpg')  center/cover no-repeat; }
+.board-area[data-theme="winter"]  { background: #e3f2fd url('assets/img/backgrounds/board_winter.jpg')  center/cover no-repeat; }
+.board-area[data-theme="pirate"]  { background: #fff9c4 url('assets/img/backgrounds/board_pirate.jpg')  center/cover no-repeat; }
+.board-area[data-theme="default"] { background: var(--green-light); }

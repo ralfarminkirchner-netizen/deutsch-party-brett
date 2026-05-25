@@ -14,6 +14,22 @@ export class BoardRenderer {
     this.onMinigameNeeded = null;
   }
 
+  _renderTurnBar() {
+    const players = this.game.getPlayers();
+    const currentPlayer = this.game.getCurrentPlayer();
+    
+    return `
+      <div class="turn-bar" style="position:absolute; top:20px; left:20px; z-index:200; display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.95); border: 3px solid #d7ccc8; border-radius:100px; padding:8px 24px 8px 8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+        <div style="background:#efebe9; border-radius:50%; padding:4px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+          ${renderCharacterToken(players.indexOf(currentPlayer), 44)}
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <span style="font-family:'Fredoka One',cursive; font-size:20px; color:#5d4037; line-height:1;">${currentPlayer.name}</span>
+          <span style="font-size:14px; color:#8d6e63; font-weight:bold;">Runde ${this.game.turnManager.getRound()}</span>
+        </div>
+      </div>`;
+  }
+
   render() {
     const players = this.game.getPlayers();
     const board = this.game.board;
@@ -36,26 +52,7 @@ export class BoardRenderer {
         box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
       ">
         ${this._renderConnections()}
-
-        <div class="turn-bar" id="turn-bar" style="
-          position:absolute; top:20px; left:20px; z-index:200;
-          display:flex; align-items:center; gap:14px;
-          background:rgba(255,255,255,0.88);
-          border-radius:100px; padding:12px 28px;
-          box-shadow:0 4px 16px rgba(0,0,0,0.15);
-        ">
-          <div class="turn-player-info" style="display:flex; align-items:center; gap:10px;">
-            ${renderCharacterToken(players.indexOf(currentPlayer), 52)}
-            <span style="
-              font-family:'Fredoka One',cursive;
-              font-size:clamp(22px,3.5vw,44px);
-              color:#1b5e20;
-              text-shadow:0 0 8px white,0 0 16px white,2px 2px 4px rgba(0,0,0,0.2);
-              white-space:nowrap;
-            ">${currentPlayer.name} ist dran!</span>
-          </div>
-          <span style="font-size:20px;font-weight:800;color:#388e3c;">Runde ${this.game.turnManager.getRound()}</span>
-        </div>
+        ${this._renderTurnBar()}
 
         <div id="game-board" style="
           position:absolute;
@@ -74,6 +71,9 @@ export class BoardRenderer {
           <div id="dice-prompt" style="
             font-family:'Fredoka One',cursive; font-size:26px; color:#1b5e20;
             text-shadow:0 0 8px white,0 0 20px white;
+            background: rgba(255,255,255,0.8);
+            padding: 4px 16px;
+            border-radius: 20px;
           ">Wurf!</div>
           <div id="dice-container">
             <div id="dice" style="
@@ -95,17 +95,18 @@ export class BoardRenderer {
 
       <div style="
         width:300px; min-width:260px;
-        background:#f1f8e9;
-        border-left:3px solid #a5d6a7;
+        background:rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border-left:3px solid #d7ccc8;
         display:flex; flex-direction:column;
         padding:20px; gap:20px;
         overflow-y:auto;
-        box-shadow:-4px 0 16px rgba(0,0,0,0.1);
+        box-shadow:-4px 0 24px rgba(0,0,0,0.15);
         height:100%;
         box-sizing:border-box;
       ">
         <!-- Punktestand -->
-        <div style="background:white; border-radius:16px; padding:16px;">
+        <div style="background:rgba(255,255,255,0.9); border-radius:16px; padding:16px; border: 2px solid #e0cfb8; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
           <div style="
             font-family:'Fredoka One',cursive; font-size:26px;
             color:#ff6f00; margin-bottom:12px;
@@ -117,13 +118,9 @@ export class BoardRenderer {
         </div>
 
         <!-- Legende -->
-        <div style="background:white; border-radius:16px; padding:16px; flex:1;">
-          <div style="
-            font-family:'Fredoka One',cursive; font-size:26px;
-            color:#ff6f00; margin-bottom:12px;
-            text-shadow:1px 1px 0 rgba(0,0,0,0.1);
-          ">Legende</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="margin-top:auto; background:rgba(255,255,255,0.9); border-radius:16px; padding:16px; border: 2px solid #e0cfb8;">
+          <div style="font-family:'Fredoka One',cursive; font-size:20px; color:#5d4037; margin-bottom:12px;">Legende</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;">
             ${this._renderLegend()}
           </div>
         </div>
@@ -196,9 +193,9 @@ export class BoardRenderer {
           </filter>
         </defs>
         <!-- Layered paths for a hand-drawn look -->
-        <path d="${d}" style="fill:none; stroke:rgba(0,0,0,0.6); stroke-width:0.8; filter: url(#charcoal-path); stroke-linecap: round;" />
-        <path d="${d}" style="fill:none; stroke:rgba(255,255,255,0.5); stroke-width:0.5; stroke-dasharray: 1 3; filter: url(#charcoal-path);" />
-        <path d="${d}" style="fill:none; stroke:var(--color-primary); stroke-width:0.4; stroke-dasharray: 0.5 2; opacity: 0.8;" />
+        <path d="${d}" style="fill:none; stroke:rgba(0,0,0,0.6); stroke-width:6; vector-effect:non-scaling-stroke; filter: url(#charcoal-path); stroke-linecap: round;" />
+        <path d="${d}" style="fill:none; stroke:rgba(255,255,255,0.7); stroke-width:3; vector-effect:non-scaling-stroke; stroke-dasharray: 6 12; filter: url(#charcoal-path);" />
+        <path d="${d}" style="fill:none; stroke:var(--color-primary); stroke-width:3; vector-effect:non-scaling-stroke; stroke-dasharray: 4 8; opacity: 0.9;" />
       </svg>
     `;
   }
@@ -256,6 +253,7 @@ export class BoardRenderer {
              z-index: 10;
              border: 2px solid rgba(255,255,255,0.8);
              cursor: default;
+             opacity: 0.85;
            ">
         <span style="display:flex; align-items:center; justify-content:center;">${getFieldIconSVG(field.type, 34)}</span>
         <span style="font-size:13px; font-weight:900; font-family:'Fredoka One',cursive; color:rgba(255,255,255,0.95); text-shadow:1px 1px 2px rgba(0,0,0,0.5);">${field.id}</span>

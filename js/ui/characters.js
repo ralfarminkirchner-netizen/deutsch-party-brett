@@ -156,8 +156,9 @@ export function renderCharacterAvatar(index, size = 64) {
   const char = getCharacter(index);
   const spriteHTML = buildCharacterSprite(char, size);
   
-  return `<div class="char-avatar" style="width:${size}px; height:${size}px;" data-char-id="${char.id}">
-    ${spriteHTML}
+  return `<div class="char-avatar" style="width:${size}px; height:${size}px; background-color: rgba(255,255,255,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: ${size/4}px; font-weight: bold; border: 4px solid #4e342e; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.1);" data-char-id="${char.id}">
+    <span style="position: absolute; z-index: 1; opacity: 0.3;">${char.name_de.charAt(0)}</span>
+    <div style="position: absolute; inset: 0; z-index: 2;">${spriteHTML}</div>
   </div>`;
 }
 
@@ -168,7 +169,8 @@ export function renderCharacterToken(index, size = 32) {
   const char = getCharacter(index);
   const spriteHTML = buildCharacterSprite(char, size);
 
-  return `<div class="char-token" style="width:${size}px; height:${size}px; flex-shrink:0;">
-    ${spriteHTML}
+  return `<div class="char-token" style="width:${size}px; height:${size}px; flex-shrink:0; background-color: rgba(255,255,255,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: ${size/2}px; font-weight: bold; border: 2px solid #4e342e; position: relative; overflow: hidden; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
+    <span style="position: absolute; z-index: 1; opacity: 0.3;">${char.name_de.charAt(0)}</span>
+    <div style="position: absolute; inset: 0; z-index: 2;">${spriteHTML}</div>
   </div>`;
 }

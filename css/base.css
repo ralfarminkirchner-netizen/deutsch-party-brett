@@ -287,7 +287,7 @@ body {
 }
 
 .standee-card {
-  filter: drop-shadow(2px 6px 8px rgba(0,0,0,0.3));
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-radius: 50%;
 }
 
 .standee-base {

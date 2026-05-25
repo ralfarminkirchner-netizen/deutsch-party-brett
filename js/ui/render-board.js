@@ -17,11 +17,12 @@ export class BoardRenderer {
   _renderTurnBar() {
     const players = this.game.getPlayers();
     const currentPlayer = this.game.getCurrentPlayer();
+    const avatarIndex = currentPlayer.colorIndex !== undefined ? currentPlayer.colorIndex : players.indexOf(currentPlayer);
     
     return `
-      <div class="turn-bar" style="position:absolute; top:20px; left:20px; z-index:200; display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.95); border: 3px solid #d7ccc8; border-radius:100px; padding:8px 24px 8px 8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <div class="turn-bar" style="position:absolute; top:20px; left:20px; z-index:200; display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.95); border: 3px solid #d7ccc8; border-radius:100px; padding:8px 24px 8px 8px; box-shadow:0 6px 20px rgba(0,0,0,0.25);">
         <div style="background:#efebe9; border-radius:50%; padding:4px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
-          ${renderCharacterToken(players.indexOf(currentPlayer), 44)}
+          ${renderCharacterToken(avatarIndex, 44)}
         </div>
         <div style="display:flex; flex-direction:column;">
           <span style="font-family:'Fredoka One',cursive; font-size:20px; color:#5d4037; line-height:1;">${currentPlayer.name}</span>
@@ -34,9 +35,14 @@ export class BoardRenderer {
     const players = this.game.getPlayers();
     const board = this.game.board;
     const currentPlayer = this.game.getCurrentPlayer();
+    const avatarIndex = currentPlayer.colorIndex !== undefined ? currentPlayer.colorIndex : players.indexOf(currentPlayer);
 
-    // Use the real illustration as background — served from the assets folder
-    const boardBgImage = 'url("assets/img/backgrounds/craft_board.png")';
+    // Provide a beautiful, clean, generated cardboard texture via CSS
+    // so it doesn't clash with the game logic fields!
+    const boardBgStyle = `
+      background-color: #d8c3a5;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E");
+    `;
 
     this.container.innerHTML = `
       <div class="board-area" style="
@@ -46,10 +52,8 @@ export class BoardRenderer {
         width: 100% !important;
         min-height: 100vh;
         overflow: hidden;
-        background-image: ${boardBgImage};
-        background-size: cover;
-        background-position: center;
-        box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
+        ${boardBgStyle}
+        box-shadow: inset 0 0 80px rgba(0,0,0,0.2);
       ">
         ${this._renderConnections()}
         ${this._renderTurnBar()}
@@ -247,7 +251,7 @@ export class BoardRenderer {
              transform: translate(-50%, -50%) rotate(${rotation}deg);
              background-image: linear-gradient(${color.bg}, ${color.bg});
              border-radius: ${blobRadius};
-             box-shadow: 1px 1px 0 rgba(0,0,0,0.1), inset 1px 1px 3px rgba(255,255,255,0.8);
+             box-shadow: 6px 10px 20px rgba(0,0,0,0.4), inset 1px 1px 3px rgba(255,255,255,0.8);
              display: flex; align-items: center; justify-content: center;
              flex-direction: column;
              z-index: 10;

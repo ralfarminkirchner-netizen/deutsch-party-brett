@@ -4,7 +4,7 @@
 
 body {
   font-family: var(--font-body);
-  background: #beddba !important;  /* Force OS dark-mode override */
+  background-color: #beddba !important;  /* Force OS dark-mode override */
   color: var(--green-text);
 }
 

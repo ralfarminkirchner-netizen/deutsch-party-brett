@@ -24,15 +24,16 @@ export class BoardRenderer {
 
     this.container.innerHTML = `
       <div class="board-area" style="
-        flex:1;
-        position:relative;
-        height:100%;
-        min-height:100vh;
-        overflow:hidden;
+        flex: 1;
+        position: relative !important;
+        height: 100% !important;
+        width: 100% !important;
+        min-height: 100vh;
+        overflow: hidden;
         background-image: ${boardBgImage};
         background-size: cover;
         background-position: center;
-        background-repeat: no-repeat;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
       ">
         ${this._renderConnections()}
 

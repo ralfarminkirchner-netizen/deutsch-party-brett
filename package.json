@@ -4,10 +4,15 @@
   "description": "Lernspiel",
   "main": "index.html",
   "scripts": {
-    "start": "npx serve -s . -p $PORT"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite --port $PORT --host 0.0.0.0"
   },
-  "dependencies": {},
   "devDependencies": {
-    "serve": "^14.2.4"
+    "canvas-confetti": "^1.9.4",
+    "howler": "^2.2.4",
+    "serve": "^14.2.4",
+    "vite": "^8.0.14"
   }
 }

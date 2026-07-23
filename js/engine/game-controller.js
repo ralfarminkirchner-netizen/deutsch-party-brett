@@ -165,12 +165,15 @@ export class GameController {
         return { action: 'minigame', mode: 'challenge' };
 
       case 'minigame_team':
-        this._emit('minigameStart', { 
-          mode: 'team', 
-          players: this._getTeamPartners(player),
-          field 
-        });
-        return { action: 'minigame', mode: 'team' };
+        {
+          const players = this._getTeamPartners(player);
+          this._emit('minigameStart', {
+            mode: 'team',
+            players,
+            field
+          });
+          return { action: 'minigame', mode: 'team', players };
+        }
 
       case 'reward':
         return this._handleRewardField(player);
@@ -397,13 +400,83 @@ export class GameController {
     const oldPos = player.position;
     const newPos = field.targetId;
     
-    // Teleportation is instant, but we emit it so UI can animate
     player.moveTo(newPos);
     this._emit('playerMove', { player, oldPos, newPos, teleport: true, reason: 'Durch ein Portal gereist! 🌀' });
     this._emit('reward', { player, reward });
     
-    this.completeTurn();
-    return { action: 'portal', targetId: newPos };
+    const destField = this.board.getField(newPos);
+    const destMeta = getFieldMeta(destField.type);
+    const needsMinigame = destMeta.handler?.startsWith('minigame');
+
+    if (!needsMinigame) {
+      this.completeTurn();
+      return { action: 'portal', targetId: newPos, needsResolve: false };
+    }
+
+    return { action: 'portal', targetId: newPos, needsResolve: true };
+  }
+
+  /**
+   * Export full game state for save / multiplayer sync
+   */
+  exportState(settingsSnapshot = null) {
+    return {
+      state: this.state,
+      finishCount: this.finishCount,
+      gameMode: this.gameMode,
+      settings: settingsSnapshot || this.settings,
+      boardImageId: this.settings?.selectedBoardId || 'default',
+      fields: this.board?.fields?.map(f => ({ ...f })) || [],
+      turn: {
+        currentPlayerIndex: this.turnManager?.getCurrentPlayerIndex() ?? 0,
+        round: this.turnManager?.getRound() ?? 1,
+        phase: this.turnManager?.phase ?? TurnPhase.IDLE
+      },
+      players: this.players.map(p => p.toJSON())
+    };
+  }
+
+  /**
+   * Restore game from saved snapshot
+   */
+  importState(snapshot) {
+    if (!snapshot) return false;
+
+    this.settings = snapshot.settings;
+    this.state = snapshot.state || 'playing';
+    this.finishCount = snapshot.finishCount || 0;
+    this.gameMode = snapshot.gameMode || 'local';
+
+    this.board = new Board(false, snapshot.boardImageId || snapshot.settings?.selectedBoardId || 'default');
+    if (snapshot.fields?.length) {
+      this.board.fields = snapshot.fields.map(f => ({ ...f }));
+      this.board.totalFields = this.board.fields.length;
+    }
+
+    this.dice = new Dice();
+    this.turnManager = new TurnManager();
+    this.turnManager.init(snapshot.players?.length || 2);
+    this.turnManager.currentPlayerIndex = snapshot.turn?.currentPlayerIndex ?? 0;
+    this.turnManager.round = snapshot.turn?.round ?? 1;
+    this.turnManager.phase = snapshot.turn?.phase ?? TurnPhase.IDLE;
+
+    this.players = (snapshot.players || []).map(data => {
+      const p = new Player(data.id, data.name, data.colorIndex);
+      Object.assign(p, {
+        position: data.position ?? 0,
+        finished: data.finished ?? false,
+        finishOrder: data.finishOrder ?? -1,
+        coins: data.coins ?? 0,
+        stars: data.stars ?? 0,
+        badges: data.badges || [],
+        collectibles: data.collectibles || [],
+        jokers: data.jokers || { hint: 0, protection: 0, extraRoll: 0 },
+        stats: data.stats || p.stats
+      });
+      return p;
+    });
+
+    return true;
   }
 
   _getTeamPartners(player) {

@@ -3,8 +3,11 @@
    ============================================ */
 
 .minigame-screen {
-  background-image: var(--ui-background-minigame) !important;
-  background-color: #fdf5e6 !important;
+  background-image:
+    radial-gradient(circle at 14% 18%, rgba(255, 217, 61, 0.28), transparent 24%),
+    radial-gradient(circle at 86% 18%, rgba(56, 189, 248, 0.22), transparent 26%),
+    linear-gradient(145deg, #f8f1df 0%, #dbeed1 100%) !important;
+  background-color: #f8f1df !important;
   justify-content: center;
   align-items: center;
   padding: var(--space-md);
@@ -16,29 +19,33 @@
 .minigame-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.15); /* Much lighter overlay for workshop feel */
-  backdrop-filter: blur(2px);
+  background:
+    linear-gradient(rgba(255,255,255,0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.22) 1px, transparent 1px);
+  background-size: 42px 42px;
+  backdrop-filter: none;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 36px);
 }
 
 .minigame-container {
   position: relative;
-  background-color: #fff9f0 !important;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 900px;
-  min-height: 550px;
+  background-color: rgba(255, 249, 240, 0.96) !important;
+  border-radius: 28px;
+  width: min(96vw, 1080px);
+  min-height: min(720px, calc(100dvh - 48px));
   box-shadow: 
-    0 15px 35px rgba(0,0,0,0.3),
-    0 0 0 1px rgba(0,0,0,0.05),
-    0 0 0 8px #dcc6b5,
-    0 0 0 10px #8b6b55,
-    15px 15px 40px rgba(0,0,0,0.4);
-  animation: bounce-in 0.4s var(--ease-bounce) both;
+    0 22px 48px rgba(61,43,30,0.24),
+    0 0 0 1px rgba(93,64,55,0.07),
+    inset 0 0 0 1px rgba(255,255,255,0.76);
+  animation: slide-in-up 0.28s var(--ease-smooth) both;
   display: flex;
   flex-direction: column;
-  transform: rotate(-0.3deg);
   z-index: var(--z-overlay);
+  overflow: hidden;
 }
 
 .minigame-container-inner {
@@ -50,9 +57,11 @@
 
 .minigame-header {
   text-align: center;
-  margin-bottom: var(--space-lg);
-  border-bottom: 2px dashed rgba(0,0,0,0.1);
-  padding-bottom: var(--space-md);
+  border-bottom: 2px dashed rgba(93,64,55,0.13);
+  padding: 22px 28px 16px;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(255, 217, 61, 0.28), transparent 22%),
+    linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.34));
 }
 
 .minigame-title {
@@ -60,10 +69,222 @@
   font-size: var(--font-size-xl);
   color: #3b2b1a;
   margin-bottom: var(--space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  line-height: 1.1;
 }
 
-.minigame-instr {
-  font-size: var(--font-size-sm);
+.microgame-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 16px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: #ff3366;
+  color: white;
+  box-shadow: 0 5px 0 #ad1457, 0 10px 20px rgba(173,20,87,0.22);
+  font-family: var(--font-family-display);
+  font-size: 15px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.minigame-instr,
+.minigame-instructions {
+  font-size: clamp(15px, 1.7vw, 18px);
   color: #5D4037;
   font-family: var(--font-handwritten);
+  padding: 14px 30px 12px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.minigame-timer-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 74px;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid rgba(93,64,55,0.2);
+  font-family: var(--font-family-display);
+  color: #5D4037;
+}
+
+.timer.warning {
+  background: #fff3cd;
+  color: #8a5a00;
+}
+
+.timer.danger {
+  background: #ffe0e0;
+  color: #b71c1c;
+  animation: pulse 0.32s ease-in-out infinite alternate;
+}
+
+#minigame-game-area {
+  flex: 1;
+  min-height: 420px;
+  padding: 0 28px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.minigame-result {
+  width: 100%;
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardboard-result-card {
+  width: min(92%, 520px);
+  padding: 36px 28px;
+  text-align: center;
+  background: #fffef8;
+  border: 3px solid #8b6b55;
+  border-radius: 24px 8px 28px 12px;
+  box-shadow: 0 14px 32px rgba(93,64,55,0.22);
+}
+
+.result-icon {
+  display: flex;
+  justify-content: center;
+}
+
+.result-title {
+  font-family: var(--font-family-display);
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.result-title.success { color: #2e7d32; }
+.result-title.partial { color: #f57c00; }
+.result-title.fail { color: #c62828; }
+
+.result-rewards {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .minigame-screen {
+    padding: 0;
+  }
+
+  .minigame-overlay {
+    padding: 10px;
+  }
+
+  .minigame-container {
+    width: 96vw;
+    min-height: 0;
+    max-height: calc(100dvh - 18px);
+    overflow-y: auto;
+    border-radius: 8px;
+  }
+
+  .minigame-header {
+    padding: 16px 16px 12px;
+  }
+
+  .minigame-title {
+    font-size: clamp(26px, 8vw, 34px);
+    flex-wrap: wrap;
+  }
+
+  .microgame-mode-chip {
+    min-height: 30px;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .minigame-instructions {
+    padding: 0 16px 12px;
+  }
+
+  #minigame-game-area {
+    min-height: 0;
+    padding: 0 14px 18px;
+    align-items: flex-start;
+  }
+}
+
+.topic-intro-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 24px 10px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(236,72,153,0.12), rgba(56,189,248,0.12));
+  border: 2px solid rgba(255,255,255,0.8);
+}
+
+.topic-intro-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #6d4c41;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.topic-intro-card strong {
+  flex: 1;
+  font-family: var(--font-display, 'Fredoka One', cursive);
+  color: #1b5e20;
+}
+
+.tts-btn {
+  border: none;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.12);
+}
+
+.learning-feedback-card {
+  margin: 18px auto 0;
+  max-width: 420px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(255, 243, 224, 0.95);
+  border: 2px dashed #ff8a65;
+  text-align: left;
+}
+
+.learning-feedback-card strong {
+  display: block;
+  color: #e65100;
+  margin-bottom: 6px;
+}
+
+.learning-feedback-card p {
+  margin: 4px 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #4e342e;
+}
+
+.correct-answer em {
+  font-style: normal;
+  font-weight: 800;
+  color: #2e7d32;
 }

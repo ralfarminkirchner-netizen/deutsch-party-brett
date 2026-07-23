@@ -4,6 +4,8 @@
  * Handles coin/star/joker/badge granting with fairness rules.
  */
 
+import { KLEBENSFREI_COLLECTIBLES } from '../asset-manifest.js';
+
 export const RewardType = {
   COINS: 'coins',
   STARS: 'stars',
@@ -16,7 +18,7 @@ export const RewardType = {
 // Reward presets for different scenarios
 export const REWARD_PRESETS = {
   // Single player task rewards
-  taskCorrect: { coins: 3, description: 'Richtig gelöst!' },
+  taskCorrect: { coins: 3, collectible: true, description: 'Richtig gelöst!' },
   taskPartial: { coins: 1, description: 'Fast richtig!' },
   taskWrong:   { coins: 0, description: 'Nicht schlimm, versuch es weiter!' },
 
@@ -31,8 +33,8 @@ export const REWARD_PRESETS = {
   teamPartial: { coins: 2, description: 'Guter Versuch im Team!' },
 
   // Special fields
-  rewardField:   { coins: 3, description: 'Bonus-Münzen!' },
-  treasureField: { stars: 1, description: 'Ein Stern für dich! ⭐' },
+  rewardField:   { coins: 3, collectible: true, description: 'Bonus-Münzen!' },
+  treasureField: { stars: 1, collectible: true, description: 'Ein Stern für dich!' },
   helperField:   { joker: 'hint', description: 'Du hast einen Tipp-Joker bekommen! 💡' },
   trapField:     { coins: -2, description: 'Au weia! Eine Falle! 2 Münzen weg.' },
   portalField:   { coins: 0, description: 'Huiii! Ein geheimes Portal! 🌀' },
@@ -64,8 +66,39 @@ export function grantReward(player, presetKey) {
     player.addJoker(preset.joker);
     granted.items.push({ type: 'joker', subtype: preset.joker, amount: 1 });
   }
+  if (preset.collectible) {
+    const collectible = grantNextCollectible(player);
+    if (collectible) {
+      granted.items.push({ type: 'collectible', collectible, amount: 1 });
+      granted.description = `${preset.description} ${collectible.name_de} fürs Entdeckerbuch!`;
+    }
+  }
 
   return granted;
+}
+
+export function grantNextCollectible(player) {
+  if (!player?.addCollectible || !KLEBENSFREI_COLLECTIBLES.length) return null;
+
+  const preferredId = getPreferredCollectibleId(player);
+  const preferred = KLEBENSFREI_COLLECTIBLES.find(item =>
+    item.id === preferredId && !player.hasCollectible(item.id)
+  );
+  const next = preferred || KLEBENSFREI_COLLECTIBLES.find(item => !player.hasCollectible(item.id));
+  if (!next) return null;
+
+  const added = player.addCollectible(next.id);
+  return added ? next : null;
+}
+
+function getPreferredCollectibleId(player) {
+  const preferredByAvatar = {
+    klebensfrei_zora: 'zora-sticker',
+    klebensfrei_nuba: 'nuba-wolke-sticker',
+    klebensfrei_mira: 'mira-abc-sticker',
+    klebensfrei_leo: 'leo-dschungel-sticker'
+  };
+  return preferredByAvatar[player.avatarId] || null;
 }
 
 /**

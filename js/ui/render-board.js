@@ -6,12 +6,17 @@ import { getFieldMeta, getFieldIconSVG } from '../engine/field-types.js';
 import { Dice } from '../engine/dice.js';
 import { renderCharacterToken, renderCharacterAvatar } from '../ui/characters.js';
 import { iconCoin, iconStar } from '../ui/icons.js';
+import { STORY_PROPS, KLEBENSFREI_COLLECTIBLES } from '../asset-manifest.js';
+import { SoundFX } from '../ui/sounds.js';
 
 export class BoardRenderer {
   constructor(containerEl, gameController) {
     this.container = containerEl;
     this.game = gameController;
     this.onMinigameNeeded = null;
+    this.onExitToStart = null;
+    this.onRestartRequested = null;
+    this.focusAlbumPlayerId = null;
   }
 
   _renderTurnBar() {
@@ -31,21 +36,54 @@ export class BoardRenderer {
       </div>`;
   }
 
+  _renderBoardHud(players, currentPlayer) {
+    return `
+      <div class="party-board-hud">
+        <div class="party-turn-chip">
+          ${renderCharacterToken(currentPlayer.colorIndex ?? 0, 44)}
+          <div>
+            <strong>${currentPlayer.name}</strong>
+            <span>Runde ${this.game.turnManager.getRound()} · noch ${Math.max(0, this.game.board.totalFields - 1 - currentPlayer.position)} Felder</span>
+          </div>
+          <button class="party-menu-trigger" id="open-game-menu" type="button" aria-label="Spiel pausieren" title="Spiel pausieren">•••</button>
+        </div>
+        <div class="party-score-strip">
+          ${players.map(p => this._renderScoreEntry(p, currentPlayer)).join('')}
+        </div>
+      </div>
+      ${this._renderAlbumButton(currentPlayer)}
+      <div class="party-field-key">
+        ${this._renderLegend()}
+      </div>
+    `;
+  }
+
   render() {
     const players = this.game.getPlayers();
     const board = this.game.board;
     const currentPlayer = this.game.getCurrentPlayer();
-    const avatarIndex = currentPlayer.colorIndex !== undefined ? currentPlayer.colorIndex : players.indexOf(currentPlayer);
 
-    // Provide a beautiful, clean, generated cardboard texture via CSS
-    // so it doesn't clash with the game logic fields!
-    const boardBgStyle = `
+    const boardUrl = this.game.settings?.selectedBoardUrl;
+    const boardBgStyle = boardUrl ? `
+      background-color: #beddba;
+      background-image: url('${boardUrl}');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    ` : `
       background-color: #d8c3a5;
-      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E");
+      background-image:
+        repeating-linear-gradient(35deg, rgba(255,255,255,0.08) 0 2px, rgba(93,64,55,0.035) 2px 4px),
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.22), transparent 24%),
+        radial-gradient(circle at 82% 42%, rgba(255,255,255,0.18), transparent 26%),
+        linear-gradient(145deg, #d8c3a5, #beddba);
+      background-size: 160px 160px, cover, cover, cover;
+      background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+      background-position: center, center, center, center;
     `;
 
     this.container.innerHTML = `
-      <div class="board-area" style="
+      <div class="board-area party-board-stage" style="
         flex: 1;
         position: relative !important;
         height: 100% !important;
@@ -55,8 +93,9 @@ export class BoardRenderer {
         ${boardBgStyle}
         box-shadow: inset 0 0 80px rgba(0,0,0,0.2);
       ">
+        ${this._renderBoardHud(players, currentPlayer)}
         ${this._renderConnections()}
-        ${this._renderTurnBar()}
+        ${this._renderStoryProps()}
 
         <div id="game-board" style="
           position:absolute;
@@ -68,75 +107,39 @@ export class BoardRenderer {
           ${players.map(p => this._renderToken(p)).join('')}
         </div>
 
-        <div id="dice-area" style="
-          position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
-          z-index:200; display:flex; flex-direction:column; align-items:center; gap:10px;
-        ">
-          <div id="dice-prompt" style="
-            font-family:'Fredoka One',cursive; font-size:26px; color:#1b5e20;
-            text-shadow:0 0 8px white,0 0 20px white;
-            background: rgba(255,255,255,0.8);
-            padding: 4px 16px;
-            border-radius: 20px;
-          ">Wurf!</div>
+        <div id="dice-area" class="dice-area party-dice-dock">
+          <div id="dice-prompt" class="party-dice-prompt" aria-live="polite">Wurf!</div>
           <div id="dice-container">
-            <div id="dice" style="
-              width:80px; height:80px;
-              background:white;
-              border-radius:16px;
-              box-shadow:0 6px 20px rgba(0,0,0,0.25);
-              cursor:pointer;
-              display:grid; grid-template-columns:1fr 1fr 1fr;
-              padding:10px; gap:5px;
-              transition:transform 0.15s;
-            " onmouseenter="this.style.transform='scale(1.12) rotate(-5deg)'"
-               onmouseleave="this.style.transform='scale(1)'">
+            <button id="dice" class="party-dice" type="button" aria-label="Würfeln"
+              onmouseenter="this.style.transform='translateY(-3px) rotate(-5deg)'"
+              onmouseleave="this.style.transform='translateY(0)'">
               ${this._renderDiceDots(1)}
-            </div>
+            </button>
           </div>
-        </div>
-      </div>
-
-      <div style="
-        width:300px; min-width:260px;
-        background:rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border-left:3px solid #d7ccc8;
-        display:flex; flex-direction:column;
-        padding:20px; gap:20px;
-        overflow-y:auto;
-        box-shadow:-4px 0 24px rgba(0,0,0,0.15);
-        height:100%;
-        box-sizing:border-box;
-      ">
-        <!-- Punktestand -->
-        <div style="background:rgba(255,255,255,0.9); border-radius:16px; padding:16px; border: 2px solid #e0cfb8; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-          <div style="
-            font-family:'Fredoka One',cursive; font-size:26px;
-            color:#ff6f00; margin-bottom:12px;
-            text-shadow:1px 1px 0 rgba(0,0,0,0.1);
-          ">Punktestand</div>
-          <div id="scoreboard" style="display:flex;flex-direction:column;gap:8px;">
-            ${players.map(p => this._renderScoreEntry(p, currentPlayer)).join('')}
-          </div>
-        </div>
-
-        <!-- Legende -->
-        <div style="margin-top:auto; background:rgba(255,255,255,0.9); border-radius:16px; padding:16px; border: 2px solid #e0cfb8;">
-          <div style="font-family:'Fredoka One',cursive; font-size:20px; color:#5d4037; margin-bottom:12px;">Legende</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;">
-            ${this._renderLegend()}
-          </div>
+          ${this._renderJokerBar(currentPlayer)}
         </div>
       </div>
     `;
 
     this._setupDiceHandler();
     this._setupEditMode();
+    this._setupAlbumHandler();
+    this._setupGameMenuHandler();
+  }
+
+  _renderJokerBar(player) {
+    const j = player.jokers || {};
+    if (!j.hint && !j.protection && !j.extraRoll) return '';
+    return `
+      <div class="party-joker-bar" aria-label="Joker">
+        ${j.hint ? `<span class="joker-chip" title="Tipp-Joker">💡 ${j.hint}</span>` : ''}
+        ${j.protection ? `<span class="joker-chip" title="Schutz-Joker">🛡️ ${j.protection}</span>` : ''}
+        ${j.extraRoll ? `<span class="joker-chip" title="Extra-Wurf">🎲 ${j.extraRoll}</span>` : ''}
+      </div>`;
   }
 
   _setupEditMode() {
-    // Add hotkey (Shift + E) to toggle Map Editor
+    if (!import.meta.env?.DEV) return;
     if (!window.__boardEditModeInit) {
       window.__boardEditModeInit = true;
       window.addEventListener('keydown', (e) => {
@@ -204,6 +207,31 @@ export class BoardRenderer {
     `;
   }
 
+  _renderStoryProps() {
+    if (!STORY_PROPS?.length) return '';
+    return STORY_PROPS.map((prop, i) => `
+      <img
+        src="${prop.spriteImg}"
+        alt=""
+        aria-hidden="true"
+        style="
+          position:absolute;
+          right:${i * 4 + 2}%;
+          bottom:${i * 4 + 4}%;
+          width:min(11vw, 96px);
+          max-height:22vh;
+          object-fit:contain;
+          opacity:0.16;
+          mix-blend-mode:multiply;
+          filter: drop-shadow(0 12px 18px rgba(0,0,0,0.18));
+          transform:rotate(${i % 2 === 0 ? 5 : -4}deg);
+          pointer-events:none;
+          z-index:4;
+        "
+      >
+    `).join('');
+  }
+
   _renderLegend() {
     const types = ['normal', 'challenge', 'team', 'reward', 'surprise', 'helper', 'movement', 'treasure', 'trap', 'portal'];
     const labels = ['Aufgabe', 'Alle spielen', 'Teamarbeit', 'Belohnung', 'Überraschung', 'Hilfe', 'Bewegung', 'Schatz', 'Falle', 'Portal'];
@@ -247,17 +275,17 @@ export class BoardRenderer {
            style="
              position: absolute;
              left: ${field.x}%; top: ${field.y}%;
-             width: 72px; height: 72px;
+             width: clamp(48px, 4.8vw, 68px); height: clamp(48px, 4.8vw, 68px);
              transform: translate(-50%, -50%) rotate(${rotation}deg);
              background-image: linear-gradient(${color.bg}, ${color.bg});
              border-radius: ${blobRadius};
-             box-shadow: 6px 10px 20px rgba(0,0,0,0.4), inset 1px 1px 3px rgba(255,255,255,0.8);
+             box-shadow: 0 10px 20px rgba(49,37,24,0.23), inset 1px 1px 3px rgba(255,255,255,0.8);
              display: flex; align-items: center; justify-content: center;
              flex-direction: column;
              z-index: 10;
              border: 2px solid rgba(255,255,255,0.8);
              cursor: default;
-             opacity: 0.85;
+             opacity: 0.92;
            ">
         <span style="display:flex; align-items:center; justify-content:center;">${getFieldIconSVG(field.type, 34)}</span>
         <span style="font-size:13px; font-weight:900; font-family:'Fredoka One',cursive; color:rgba(255,255,255,0.95); text-shadow:1px 1px 2px rgba(0,0,0,0.5);">${field.id}</span>
@@ -269,9 +297,10 @@ export class BoardRenderer {
     const field = this.game.board.getField(player.position);
     const players = this.game.getPlayers();
     const playerIndex = players.findIndex(p => p.id === player.id);
+    const compact = window.innerWidth <= 760;
+    const tokenSize = compact ? 42 : 54;
     
-    // Balanced offset for 2.5x scale (60px staggering)
-    const offset = (playerIndex - (players.length - 1) / 2) * 60;
+    const offset = this._getPlayerOffset(playerIndex, players.length);
     
     const isActive = this.game.getCurrentPlayer().id === player.id;
     const zIndex = isActive ? 1000 : 100 + playerIndex;
@@ -279,11 +308,10 @@ export class BoardRenderer {
     return `
       <div class="player-standee-container ${isActive ? 'active' : ''}" 
            id="token-${player.id}"
-           style="left:${field.x}%; top:${field.y}%; transform: translate(calc(-50% + ${offset}px), -90%); z-index: ${zIndex};">
-        <div class="standee-card">
-           ${renderCharacterAvatar(playerIndex, 240)}
+           style="left:${field.x}%; top:${field.y}%; transform: translate(calc(-50% + ${offset}px), -68%); z-index: ${zIndex};">
+        <div class="standee-card" style="--player-ring:${player.avatarColor || '#ff3366'};">
+           ${renderCharacterAvatar(player.colorIndex ?? playerIndex, tokenSize)}
         </div>
-        <div class="standee-base"></div>
         <div class="standee-shadow"></div>
       </div>
     `;
@@ -294,7 +322,7 @@ export class BoardRenderer {
     const randomColor = colors[player.id % colors.length];
     
     return `
-      <div class="scoreboard-entry cardboard-chip ${randomColor} ${player.id === currentPlayer.id ? 'active-player' : ''}" style="margin-bottom: 8px;">
+      <div class="scoreboard-entry ${randomColor} ${player.id === currentPlayer.id ? 'active-player' : ''}">
         ${player.getTokenHTML(32)}
         <span class="scoreboard-name" style="font-weight: bold;">${player.name}</span>
         <div class="scoreboard-stats">
@@ -303,6 +331,50 @@ export class BoardRenderer {
         </div>
       </div>
     `;
+  }
+
+  _renderAlbumButton() {
+    const partyFinds = new Set(
+      this.game.getPlayers().flatMap(player => player.collectibles || [])
+    );
+    const found = partyFinds.size;
+    const total = KLEBENSFREI_COLLECTIBLES.length;
+
+    return `
+      <button class="party-album-button" type="button" id="open-album" aria-label="Entdeckerbuch öffnen">
+        <span class="album-stack-preview">
+          ${KLEBENSFREI_COLLECTIBLES.slice(0, 3).map((item, index) => `
+            <img src="${item.spriteImg}" alt="" style="--album-rot:${index === 0 ? -8 : index === 1 ? 5 : 12}deg; --album-x:${index * 8}px;">
+          `).join('')}
+        </span>
+        <span>
+          <strong>Entdeckerbuch</strong>
+          <small>${found}/${total} Teamfunde</small>
+        </span>
+      </button>
+    `;
+  }
+
+  _setupAlbumHandler() {
+    this.container.querySelector('#open-album')?.addEventListener('click', () => {
+      SoundFX.click();
+      const players = this.game.getPlayers();
+      const focused = players.find(player => player.id === this.focusAlbumPlayerId);
+      this.showCollectionAlbum(focused || this.game.getCurrentPlayer());
+    });
+  }
+
+  _setupGameMenuHandler() {
+    this.container.querySelector('#open-game-menu')?.addEventListener('click', () => {
+      SoundFX.click();
+      this.showGameMenu();
+    });
+  }
+
+  _getPlayerOffset(playerIndex, playerCount) {
+    const compact = window.innerWidth <= 760;
+    const spacing = compact ? 14 : 18;
+    return (playerIndex - (playerCount - 1) / 2) * spacing;
   }
 
   _renderDiceDots(value) {
@@ -317,11 +389,14 @@ export class BoardRenderer {
     const diceEl = document.getElementById('dice');
     if (!diceContainer || !diceEl) return;
 
-    diceContainer.addEventListener('click', async () => {
+    diceEl.addEventListener('click', async () => {
       if (this.game.state !== 'playing') return;
       if (diceEl.classList.contains('rolling')) return;
 
+      SoundFX.diceRoll();
       diceEl.classList.add('rolling');
+      diceEl.disabled = true;
+      diceEl.setAttribute('aria-label', 'Würfel rollt');
       document.getElementById('dice-prompt').textContent = 'Würfelt...';
 
       const rollingHandler = (e) => {
@@ -333,6 +408,8 @@ export class BoardRenderer {
       
       window.removeEventListener('dice:rolling', rollingHandler);
       diceEl.classList.remove('rolling');
+      diceEl.disabled = false;
+      diceEl.setAttribute('aria-label', `${value} gewürfelt. Noch einmal würfeln`);
       diceEl.innerHTML = this._renderDiceDots(value);
       document.getElementById('dice-prompt').textContent = `${value} gewürfelt!`;
 
@@ -351,12 +428,13 @@ export class BoardRenderer {
         const field = this.game.board.getField(pos);
         const players = this.game.getPlayers();
         const playerIndexLocal = players.findIndex(p => p.id === player.id);
-        const offset = (playerIndexLocal - (players.length - 1) / 2) * 15;
+        const offset = this._getPlayerOffset(playerIndexLocal, players.length);
         token.style.transition = 'left 0.3s var(--ease-bounce), top 0.3s var(--ease-bounce)';
         token.style.left = `${field.x}%`;
         token.style.top = `${field.y}%`;
-        token.style.transform = `translate(calc(-50% + ${offset}px), -85%)`;
+        token.style.transform = `translate(calc(-50% + ${offset}px), -68%)`;
         token.style.animation = 'token-hop 0.3s var(--ease-bounce)';
+        SoundFX.tokenMove();
         await new Promise(r => setTimeout(r, 350));
         token.style.animation = '';
       }
@@ -373,6 +451,7 @@ export class BoardRenderer {
     
     // Handle special visual triggers
     if (result.action === 'portal') {
+      SoundFX.portal();
       const boardContainer = document.getElementById('game-board');
       boardContainer.classList.add('teleport-flash');
       token.style.opacity = '0';
@@ -387,6 +466,7 @@ export class BoardRenderer {
       
       this.showToast(`Teleportation!`, 'info');
     } else if (result.action === 'trap') {
+      SoundFX.trap();
       const boardContainer = document.getElementById('game-board');
       boardContainer.classList.add('trap-shake');
       this.showToast(`AUA! Falle!`, 'warning');
@@ -399,11 +479,35 @@ export class BoardRenderer {
       }
     }
 
+    if (result.action === 'portal' && result.needsResolve) {
+      const destField = this.game.board.getField(result.targetId);
+      await new Promise(r => setTimeout(r, 400));
+      const portalResult = this.game.resolveField(destField);
+      if (portalResult.action === 'minigame') {
+        if (portalResult.mode === 'challenge') SoundFX.challenge();
+        if (this.onMinigameNeeded) this.onMinigameNeeded(portalResult);
+        return;
+      }
+      await new Promise(r => setTimeout(r, 600));
+      this.render();
+      window.dispatchEvent(new CustomEvent('game:autosave'));
+      return;
+    }
+
+    if (result.action === 'portal') {
+      await new Promise(r => setTimeout(r, 600));
+      this.render();
+      window.dispatchEvent(new CustomEvent('game:autosave'));
+      return;
+    }
+
     if (result.action === 'minigame') {
+      if (result.mode === 'challenge') SoundFX.challenge();
       if (this.onMinigameNeeded) this.onMinigameNeeded(result);
     } else {
       await new Promise(r => setTimeout(r, 1000));
       this.render();
+      window.dispatchEvent(new CustomEvent('game:autosave'));
     }
   }
 
@@ -421,6 +525,278 @@ export class BoardRenderer {
   }
 
   update() { this.render(); }
+
+  showRoundResult(summary) {
+    if (!summary?.player || !summary.result) return;
+
+    const existing = document.querySelector('.round-result-pop');
+    if (existing) existing.remove();
+
+    if (summary.result.mode === 'challenge') {
+      this._showChallengeResult(summary);
+      return;
+    }
+
+    if (summary.result.mode === 'team') {
+      this._showTeamResult(summary);
+      return;
+    }
+
+    const { player, result, nextPlayer, coinDelta = 0, starDelta = 0, newCollectibles = [] } = summary;
+    this.focusAlbumPlayerId = player.id;
+    const title = result.correct ? 'Volltreffer!' : result.partial ? 'Guter Fang!' : 'Weiter gehts!';
+    const tone = result.correct ? 'success' : result.partial ? 'partial' : 'try';
+    const scoreText = Number.isFinite(result.score) ? `${result.score}%` : 'Runde geschafft';
+    const rewardItems = [
+      coinDelta > 0 ? `<span>${iconCoin(20)} +${coinDelta}</span>` : '',
+      starDelta > 0 ? `<span>${iconStar(20)} +${starDelta}</span>` : '',
+      ...newCollectibles.map(item => `<span class="round-sticker-chip"><img src="${item.spriteImg}" alt=""> ${item.name_de}</span>`)
+    ].filter(Boolean).join('');
+
+    const pop = document.createElement('div');
+    pop.className = `round-result-pop ${tone}`;
+    pop.innerHTML = `
+      <div class="round-result-card">
+        <div class="round-result-player">
+          ${renderCharacterToken(player.colorIndex ?? 0, 54)}
+          <div>
+            <span>${player.name}</span>
+            <strong>${title}</strong>
+          </div>
+        </div>
+        <div class="round-result-score">${scoreText}</div>
+        <div class="round-result-rewards">
+          ${rewardItems || '<span>Mut gesammelt</span>'}
+        </div>
+        ${nextPlayer ? `
+          <div class="round-result-next">
+            ${renderCharacterToken(nextPlayer.colorIndex ?? 0, 30)}
+            <span>${nextPlayer.name} ist dran</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    const boardArea = this.container.querySelector('.board-area') || this.container;
+    boardArea.appendChild(pop);
+
+    setTimeout(() => pop.classList.add('is-leaving'), 2600);
+    setTimeout(() => pop.remove(), 3200);
+  }
+
+  _showChallengeResult(summary) {
+    const { challengeRankings = [], nextPlayer } = summary;
+    const winner = challengeRankings[0];
+    const pop = document.createElement('div');
+    pop.className = 'round-result-pop challenge';
+    pop.innerHTML = `
+      <div class="round-result-card challenge-card">
+        <div class="challenge-result-title">
+          ${winner ? winner.player.getTokenHTML(54) : ''}
+          <div>
+            <span>Alle spielen</span>
+            <strong>${winner ? `${escapeHtml(winner.player.name)} gewinnt!` : 'Blitzduell beendet!'}</strong>
+          </div>
+        </div>
+        <div class="challenge-result-list">
+          ${challengeRankings.map(entry => `
+            <div class="challenge-result-row ${entry.rank === 1 ? 'winner' : ''}">
+              <strong>${entry.rank}</strong>
+              ${entry.player.getTokenHTML(30)}
+              <span>${escapeHtml(entry.player.name)}</span>
+              <small>${entry.score} Pkt.</small>
+              ${entry.coinDelta > 0 ? `<em>${iconCoin(16)} +${entry.coinDelta}</em>` : ''}
+            </div>
+          `).join('')}
+        </div>
+        ${nextPlayer ? `
+          <div class="round-result-next challenge-next">
+            ${renderCharacterToken(nextPlayer.colorIndex ?? 0, 30)}
+            <span>${nextPlayer.name} ist dran</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    const boardArea = this.container.querySelector('.board-area') || this.container;
+    boardArea.appendChild(pop);
+
+    setTimeout(() => pop.classList.add('is-leaving'), 3600);
+    setTimeout(() => pop.remove(), 4200);
+  }
+
+  _showTeamResult(summary) {
+    const { result, teamResults = [], nextPlayer } = summary;
+    const title = result.correct ? 'Team perfekt!' : result.partial ? 'Team fast geschafft!' : 'Weiter gemeinsam üben!';
+    const pop = document.createElement('div');
+    pop.className = `round-result-pop team ${result.correct ? 'success' : result.partial ? 'partial' : 'try'}`;
+    pop.innerHTML = `
+      <div class="round-result-card team-card">
+        <div class="team-result-title">
+          <div class="team-result-avatars">
+            ${teamResults.map(entry => entry.player.getTokenHTML(44)).join('')}
+          </div>
+          <div>
+            <span>Team-Runde</span>
+            <strong>${title}</strong>
+          </div>
+          <div class="round-result-score">${Number.isFinite(result.score) ? `${result.score}%` : ''}</div>
+        </div>
+        <div class="team-result-list">
+          ${teamResults.map(entry => `
+            <div class="team-result-row">
+              ${entry.player.getTokenHTML(30)}
+              <span>${escapeHtml(entry.player.name)}</span>
+              ${entry.coinDelta > 0 ? `<em>${iconCoin(16)} +${entry.coinDelta}</em>` : ''}
+              ${entry.starDelta > 0 ? `<em>${iconStar(16)} +${entry.starDelta}</em>` : ''}
+            </div>
+          `).join('')}
+        </div>
+        ${nextPlayer ? `
+          <div class="round-result-next team-next">
+            ${renderCharacterToken(nextPlayer.colorIndex ?? 0, 30)}
+            <span>${nextPlayer.name} ist dran</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    const boardArea = this.container.querySelector('.board-area') || this.container;
+    boardArea.appendChild(pop);
+
+    setTimeout(() => pop.classList.add('is-leaving'), 3200);
+    setTimeout(() => pop.remove(), 3800);
+  }
+
+  showCollectionAlbum(player) {
+    if (!player) return;
+
+    document.querySelectorAll('.toast').forEach(toast => toast.remove());
+
+    const existing = this.container.querySelector('.collection-album-overlay');
+    if (existing) existing.remove();
+
+    const owned = new Set(player.collectibles || []);
+    const itemsHTML = KLEBENSFREI_COLLECTIBLES.map((item, index) => {
+      const isOwned = owned.has(item.id);
+      return `
+        <div class="album-item ${isOwned ? 'is-owned' : 'is-locked'}" style="--album-delay:${index * 55}ms;">
+          <div class="album-item-art">
+            <img src="${item.spriteImg}" alt="${isOwned ? item.name_de : ''}">
+          </div>
+          <div class="album-item-copy">
+            <strong>${isOwned ? item.name_de : 'Noch verborgen'}</strong>
+            <span>${isOwned ? item.rarity : 'Löse Aufgaben, um diesen Fund freizuschalten.'}</span>
+            ${isOwned ? `<small>${item.hint}</small>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const playersHTML = this.game.getPlayers().map(p => `
+      <button class="album-player-chip ${p.id === player.id ? 'active' : ''}" type="button" data-player-id="${p.id}">
+        ${renderCharacterToken(p.colorIndex ?? 0, 26)}
+        <span>${p.name}</span>
+        <small>${p.collectibles?.length || 0}/${KLEBENSFREI_COLLECTIBLES.length}</small>
+      </button>
+    `).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'collection-album-overlay';
+    overlay.innerHTML = `
+      <div class="collection-album-card" role="dialog" aria-modal="true" aria-label="Entdeckerbuch">
+        <button class="album-close" type="button" aria-label="Entdeckerbuch schließen">×</button>
+        <div class="album-header">
+          ${renderCharacterAvatar(player.colorIndex ?? 0, 62)}
+          <div>
+            <span>Klebensfrei Entdeckerbuch</span>
+            <h2>${player.name}s Funde</h2>
+            <p>${owned.size} von ${KLEBENSFREI_COLLECTIBLES.length} Fundstücken entdeckt</p>
+          </div>
+        </div>
+        <div class="album-player-row">${playersHTML}</div>
+        <div class="album-grid">${itemsHTML}</div>
+      </div>
+    `;
+
+    const boardArea = this.container.querySelector('.board-area') || this.container;
+    boardArea.appendChild(overlay);
+
+    overlay.querySelector('.album-close')?.addEventListener('click', () => {
+      SoundFX.click();
+      overlay.remove();
+    });
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) overlay.remove();
+    });
+    overlay.querySelectorAll('.album-player-chip').forEach(button => {
+      button.addEventListener('click', () => {
+        const nextPlayer = this.game.getPlayers().find(p => String(p.id) === button.dataset.playerId);
+        SoundFX.click();
+        overlay.remove();
+        this.showCollectionAlbum(nextPlayer);
+      });
+    });
+  }
+
+  showGameMenu() {
+    this.container.querySelector('.game-pause-overlay')?.remove();
+
+    const currentPlayer = this.game.getCurrentPlayer();
+    const overlay = document.createElement('div');
+    overlay.className = 'game-pause-overlay';
+    overlay.innerHTML = `
+      <div class="game-pause-card" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <button class="game-pause-close" type="button" aria-label="Weiterspielen">×</button>
+        <span class="game-pause-kicker">Spiel gespeichert</span>
+        <h2 id="pause-title">Kurze Pause?</h2>
+        <div class="game-pause-status">
+          ${renderCharacterToken(currentPlayer.colorIndex ?? 0, 56)}
+          <div>
+            <strong>${escapeHtml(currentPlayer.name)} ist dran</strong>
+            <span>Runde ${this.game.turnManager.getRound()} · Feld ${currentPlayer.position} von ${this.game.board.totalFields - 1}</span>
+          </div>
+        </div>
+        <div class="game-pause-actions">
+          <button class="pause-action primary" type="button" data-action="continue">Weiterspielen</button>
+          <button class="pause-action" type="button" data-action="home">Speichern &amp; Startseite</button>
+          <button class="pause-action quiet" type="button" data-action="restart">Neues Spiel einrichten</button>
+        </div>
+      </div>
+    `;
+
+    const boardArea = this.container.querySelector('.board-area') || this.container;
+    boardArea.appendChild(overlay);
+    window.dispatchEvent(new CustomEvent('game:autosave'));
+
+    const close = () => {
+      overlay.remove();
+      window.removeEventListener('keydown', onKeyDown);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    overlay.querySelector('.game-pause-close')?.addEventListener('click', close);
+    overlay.querySelector('[data-action="continue"]')?.addEventListener('click', close);
+    overlay.querySelector('[data-action="home"]')?.addEventListener('click', () => {
+      close();
+      this.onExitToStart?.();
+    });
+    overlay.querySelector('[data-action="restart"]')?.addEventListener('click', () => {
+      if (!window.confirm('Aktuelles Spiel beenden und ein neues einrichten?')) return;
+      close();
+      this.onRestartRequested?.();
+    });
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) close();
+    });
+
+    overlay.querySelector('[data-action="continue"]')?.focus();
+  }
 
   showToast(message, type = 'info') {
     const colors = ['cardboard-pink', 'cardboard-yellow', 'cardboard-blue', 'cardboard-green', 'cardboard-orange', 'cardboard-purple'];
@@ -448,4 +824,13 @@ export class BoardRenderer {
       setTimeout(() => toast.remove(), 500);
     }, 2500);
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

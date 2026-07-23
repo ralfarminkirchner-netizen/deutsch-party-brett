@@ -265,9 +265,11 @@ const GermanModule = {
       'time-traveler': 'Drehe an der Zeitform-Uhr, um die Pflanze wachsen zu lassen!',
       'dialogue-duel': 'Wähle deine Worte weise im Gespräch mit deinen Freunden!',
       'mystery-box': 'Löse die mechanischen Rätsel der Box, um das Geheimnis zu lüften!',
-      'sentence-stacker': 'Staple die Wort-Kartons in der richtigen Reihenfolge übereinander!',
+      'sentence-stacker': 'Tippe die Wortkarten in der richtigen Reihenfolge an und baue den Satz!',
       'syllable-fishing': 'Angle dir die Silben-Boote in der richtigen Reihenfolge!',
+      'nuba-silbenflug': 'Hilf Nuba: Wie viele Silben hat das Wort auf der Wolke?',
       'scrap-hunt': 'Schiebe die Pappen beiseite und finde die versteckten Wörter!',
+      'klebensfrei-blitzreise': 'Hilf Zora, Nuba, Mira oder Leo bei einer schnellen Klebensfrei-Aufgabe!',
     };
     return instructions[miniGameType] || 'Löse die Aufgabe!';
   },

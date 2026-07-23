@@ -3,7 +3,10 @@
    ============================================ */
 
 .start-screen {
-  background-image: url('../../assets/img/ui/main_ui_bg.png');
+  background-image:
+    radial-gradient(circle at 18% 20%, rgba(255, 217, 61, 0.34), transparent 26%),
+    radial-gradient(circle at 82% 28%, rgba(236, 72, 153, 0.2), transparent 28%),
+    linear-gradient(160deg, #e8f5e9 0%, #f3e5f5 100%);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

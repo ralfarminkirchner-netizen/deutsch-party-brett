@@ -44,10 +44,10 @@ export function getUIStrings() {
  * Each topic can be served by multiple mini-game types
  */
 const TOPIC_MINIGAME_MAP = {
-  nomen:          ['sentence-stacker', 'scrap-hunt', 'word-type-sort', 'noun-hunter', 'word-ninja', 'gender-sort', 'plural-match', 'whack-a-noun', 'word-avalanche'],
-  verben:         ['sentence-stacker', 'word-type-sort', 'word-ninja', 'verb-pulse', 'tense-switcher', 'word-family-tree'],
-  adjektive:      ['sentence-stacker', 'word-type-sort', 'adjective-painter', 'word-balance', 'bubble-burst'],
-  artikel:        ['article-choice', 'article-cannon', 'gender-sort'],
+  nomen:          ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'sentence-stacker', 'scrap-hunt', 'word-type-sort', 'noun-hunter', 'word-ninja', 'gender-sort', 'plural-match', 'whack-a-noun', 'word-avalanche'],
+  verben:         ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'sentence-stacker', 'word-type-sort', 'word-ninja', 'verb-pulse', 'tense-switcher', 'word-family-tree'],
+  adjektive:      ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'sentence-stacker', 'word-type-sort', 'adjective-painter', 'word-balance', 'bubble-burst'],
+  artikel:        ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'article-choice', 'article-cannon', 'gender-sort'],
   satzbau:        ['sentence-stacker', 'sentence-stacker', 'sentence-order', 'sentence-train', 'word-stacker', 'sentence-scramble', 'sentence-bridge', 'sentence-architect', 'sentence-symphony'],
   satzarten:      ['article-choice'],
   lueckentexte:   ['fill-blanks', 'missing-letter'],
@@ -55,20 +55,48 @@ const TOPIC_MINIGAME_MAP = {
   fehlerkorrektur:['spelling-detective', 'lie-detector', 'double-letter', 'capital-detective', 'grammar-ghost'],
   gross_klein:    ['case-choice', 'capital-detective'],
   reime:          ['rhyme-match', 'rhyme-memory', 'fill-the-poem', 'rhyme-rider'],
-  lesen:          ['scrap-hunt', 'scrap-hunt', 'fill-blanks', 'word-meteorites', 'cryptogram', 'hidden-object', 'adjective-painter', 'difference-detective', 'speed-flash', 'emoji-translator', 'word-clock', 'sentence-sense', 'story-builder', 'reading-race', 'comic-strip', 'german-idiom', 'password-crack', 'secret-agent-code', 'logic-ladder', 'sentence-sniper', 'idiom-island', 'proverb-path', 'detective-adventure', 'kitchen-chaos', 'sentence-symphony', 'dialogue-duel', 'mystery-box'],
+  lesen:          ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'scrap-hunt', 'scrap-hunt', 'fill-blanks', 'word-meteorites', 'cryptogram', 'hidden-object', 'adjective-painter', 'difference-detective', 'speed-flash', 'emoji-translator', 'word-clock', 'sentence-sense', 'story-builder', 'reading-race', 'comic-strip', 'german-idiom', 'password-crack', 'secret-agent-code', 'logic-ladder', 'sentence-sniper', 'idiom-island', 'proverb-path', 'detective-adventure', 'kitchen-chaos', 'sentence-symphony', 'dialogue-duel', 'mystery-box'],
   wortschatz:     ['scrap-hunt', 'scrap-hunt', 'word-type-sort', 'word-ninja', 'teakettle-detective', 'cryptogram', 'word-balance', 'memory-chain', 'hidden-object', 'synonym-snap', 'word-chain', 'hot-cold', 'opposite-racer', 'number-words', 'category-blitz', 'emoji-translator', 'definition-match', 'compound-meaning', 'german-idiom', 'word-chess', 'logic-ladder', 'mad-libs-de', 'word-match-fast', 'synonym-bridge', 'antonym-arch', 'word-detective', 'category-cannon', 'crossword-mini', 'detective-adventure', 'grammar-rpg', 'kitchen-chaos', 'word-alchemy', 'mystery-box'],
-  silben:         ['syllable-fishing', 'syllable-fishing', 'syllable-counter', 'syllable-dj', 'syllable-stomp'],
+  silben:         ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'syllable-fishing', 'syllable-fishing', 'syllable-counter', 'syllable-dj', 'syllable-stomp'],
   zeitformen:     ['time-machine', 'verb-pulse', 'tense-switcher', 'verb-forms', 'tense-tornado', 'time-traveler'],
   satzzeichen:    ['punctuation-catcher', 'comma-king'],
   zusammengesetzte_nomen: ['compound-builder', 'compound-chain', 'split-the-word', 'compound-meaning'],
   grammatik:      ['sentence-stacker', 'preposition-world', 'verb-pulse', 'comma-king', 'question-word-match', 'modal-verb', 'adjective-endings', 'prefix-postfix', 'case-solver', 'grammar-ghost', 'prefix-power', 'suffix-sun', 'grammar-maze', 'detective-adventure', 'grammar-rpg', 'sentence-architect', 'sentence-symphony', 'time-traveler', 'dialogue-duel'],
   konzentration:  ['scrap-hunt', 'memory-chain', 'abc-bubbles', 'word-labyrinth', 'speed-flash', 'color-words', 'mirror-word', 'letter-drop', 'word-puzzle-3x3', 'letter-bounce', 'grammar-rpg', 'mystery-box'],
   alphabet:       ['abc-bubbles', 'word-chain', 'alphabet-sort'],
-  wortarten:      ['sentence-stacker', 'word-type-sort', 'word-ninja', 'whack-a-noun', 'bubble-burst', 'word-avalanche', 'word-chess', 'blitz-quiz', 'gravity-sort', 'mad-libs-de', 'tap-the-type', 'gender-gym', 'article-ace', 'word-fishing', 'suffix-sun', 'kitchen-chaos', 'mystery-box'],
+  wortarten:      ['klebensfrei-blitzreise', 'klebensfrei-blitzreise', 'sentence-stacker', 'word-type-sort', 'word-ninja', 'whack-a-noun', 'bubble-burst', 'word-avalanche', 'word-chess', 'blitz-quiz', 'gravity-sort', 'mad-libs-de', 'tap-the-type', 'gender-gym', 'article-ace', 'word-fishing', 'suffix-sun', 'kitchen-chaos', 'mystery-box'],
   wortbildung:    ['word-alchemy'],
   // Default fallback
   _default:       ['article-choice']
 };
+
+// Nur erprobt stabile Minispiele — verhindert leere/hängende Runden
+const SAFE_MINIGAMES = new Set([
+  'klebensfrei-blitzreise', 'nuba-silbenflug', 'article-choice',
+  'sentence-stacker', 'word-ninja', 'syllable-counter', 'rhyme-match',
+  'fill-blanks', 'compound-builder', 'word-type-sort'
+]);
+
+const CURATED_MINIGAME_MAP = {
+  nomen:      ['klebensfrei-blitzreise', 'word-ninja', 'word-type-sort'],
+  verben:     ['klebensfrei-blitzreise', 'word-ninja'],
+  adjektive:  ['klebensfrei-blitzreise'],
+  adjektiv:   ['klebensfrei-blitzreise'],
+  artikel:    ['article-choice', 'klebensfrei-blitzreise'],
+  satzbau:    ['sentence-stacker'],
+  satzarten:  ['article-choice'],
+  lesen:      ['klebensfrei-blitzreise'],
+  silben:     ['nuba-silbenflug', 'klebensfrei-blitzreise', 'syllable-counter'],
+  wortarten:  ['klebensfrei-blitzreise', 'word-ninja', 'word-type-sort'],
+  wortschatz: ['klebensfrei-blitzreise', 'word-ninja'],
+  reime:      ['rhyme-match'],
+  lueckentexte: ['fill-blanks'],
+  _default:   ['klebensfrei-blitzreise', 'article-choice', 'nuba-silbenflug']
+};
+
+function getTopicMap() {
+  return CURATED_MINIGAME_MAP;
+}
 
 /**
  * Generate a task for a mini-game
@@ -78,25 +106,29 @@ const TOPIC_MINIGAME_MAP = {
  * @param {string} fieldType - Board field type (normal, challenge, team)
  * @returns {object} Task object with miniGame type, content, and settings
  */
-export function generateTask(activeTopics, difficulty, fieldType = 'normal', explicitTopic = null) {
+export function generateTask(activeTopics, difficulty, fieldType = 'normal', explicitTopic = null, options = {}) {
   const lang = getLanguageModule();
   
   let topic;
-  if (explicitTopic && TOPIC_MINIGAME_MAP[explicitTopic]) {
+  const topicMap = options.topicMap || getTopicMap(options.classLevel);
+
+  if (explicitTopic && topicMap[explicitTopic]) {
     topic = explicitTopic;
   } else {
-    // Pick a random active topic
-    const validTopics = activeTopics.filter(t => TOPIC_MINIGAME_MAP[t]);
+    // Pick a random active topic from the curated pool so ordinary rounds do
+    // not surface older prototype minigames with weaker visual quality.
+    const validTopics = activeTopics.filter(t => topicMap[t]);
     if (validTopics.length === 0) {
-      // Fallback to article choice
+      // Fallback to a polished low-risk topic.
       validTopics.push('artikel');
     }
     topic = validTopics[Math.floor(Math.random() * validTopics.length)];
   }
   
-  // Pick a mini-game for the topic
-  const games = TOPIC_MINIGAME_MAP[topic] || TOPIC_MINIGAME_MAP._default;
-  const miniGameId = games[Math.floor(Math.random() * games.length)];
+  // Pick a mini-game for the topic (nur sichere IDs)
+  const games = (topicMap[topic] || topicMap._default).filter(id => SAFE_MINIGAMES.has(id));
+  const pool = games.length ? games : [...SAFE_MINIGAMES];
+  const miniGameId = pool[Math.floor(Math.random() * pool.length)];
   
   // Get content from language module
   const content = lang.getContent(topic, difficulty);

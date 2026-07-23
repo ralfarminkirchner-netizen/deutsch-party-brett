@@ -48,6 +48,7 @@ export function getBoardLayoutForImage(imageId) {
   if (idStr.includes('1966197d')) return ELEPHANT_LAYOUT;
   if (idStr.includes('montessori_nature')) return MONTESSORI_LAYOUT;
   if (idStr.includes('storybook_mystery')) return MONTESSORI_LAYOUT;
+  if (idStr.includes('klebensfrei')) return MONTESSORI_LAYOUT;
   if (idStr.includes('elefant')) return ELEPHANT_LAYOUT; // Safety fallback
   
   console.log('Board: No special layout matched for ID:', imageId, '- Falling back to Default.');

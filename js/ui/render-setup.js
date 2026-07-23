@@ -30,8 +30,8 @@ export class SetupRenderer {
     this.currentStep = 0;
     this.totalSteps = 5;
     this.players = [
-      { name: '', colorIndex: 0 },
-      { name: '', colorIndex: 1 }
+      { name: getCharacter(0).name_de, colorIndex: 0 },
+      { name: getCharacter(1).name_de, colorIndex: 1 }
     ];
 
     // Default initialization based on ID
@@ -414,6 +414,9 @@ export class SetupRenderer {
         }
       });
       if (this.players.length === 1) this.settings.setGameMode('single');
+      for (const player of this.players) {
+        player.name = player.name || getCharacter(player.colorIndex).name_de;
+      }
     }
   }
 }

@@ -135,8 +135,12 @@ import { SyllableFishing } from './syllable-fishing.js';
 import { ScrapHunt } from './scrap-hunt.js';
 import { WordChaos } from './word-chaos.js';
 import { SyllableNinja } from './syllable-ninja.js';
+import { KlebensfreiBlitzreise } from './klebensfrei-blitzreise.js';
+import { NubaSilbenflug } from './nuba-silbenflug.js';
 
 const MINIGAMES = {
+  'nuba-silbenflug': NubaSilbenflug,
+  'klebensfrei-blitzreise': KlebensfreiBlitzreise,
   'word-chaos': WordChaos,
   'syllable-ninja': SyllableNinja,
   'word-type-sort': WordTypeSort,

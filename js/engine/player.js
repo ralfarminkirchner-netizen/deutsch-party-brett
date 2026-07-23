@@ -32,6 +32,7 @@ export class Player {
     this.coins = 0;
     this.stars = 0;
     this.badges = [];
+    this.collectibles = [];
     this.jokers = {
       hint: 0,
       protection: 0,
@@ -70,6 +71,16 @@ export class Player {
     if (!this.badges.includes(badge)) this.badges.push(badge);
   }
 
+  addCollectible(collectibleId) {
+    if (!collectibleId || this.collectibles.includes(collectibleId)) return false;
+    this.collectibles.push(collectibleId);
+    return true;
+  }
+
+  hasCollectible(collectibleId) {
+    return this.collectibles.includes(collectibleId);
+  }
+
   addJoker(type) {
     if (this.jokers[type] !== undefined) this.jokers[type]++;
   }
@@ -100,7 +111,8 @@ export class Player {
       avatarId: this.avatarId, position: this.position,
       finished: this.finished, finishOrder: this.finishOrder,
       coins: this.coins, stars: this.stars,
-      badges: [...this.badges], jokers: { ...this.jokers },
+      badges: [...this.badges], collectibles: [...this.collectibles],
+      jokers: { ...this.jokers },
       stats: { ...this.stats }
     };
   }

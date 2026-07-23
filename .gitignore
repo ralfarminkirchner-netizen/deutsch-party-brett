@@ -9,4 +9,9 @@ assets/img/backgrounds/*.heic
 .railwayignore
 .npm-cache/
 .local-tools/
+.DS_Store
+node_modules/
+dist/
 
+# Runtime audio is served from public/assets/audio.
+assets/audio/

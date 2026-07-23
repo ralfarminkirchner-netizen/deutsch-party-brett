@@ -1,8 +1,13 @@
 /**
  * Mini-Game: Word Ninja (Wort-Ninja)
- * 
- * Arcade style slice game. Nouns fly up, players swipe them. Avoid Verbs!
+ *
+ * A bright microgame: tap the noun cards, avoid verb cards.
  */
+
+import { EXTRACTED_CHARS } from '../asset-manifest.js';
+import { SoundFX } from '../ui/sounds.js';
+
+const ZORA = EXTRACTED_CHARS.find(char => char.id === 'klebensfrei_zora') || EXTRACTED_CHARS[0];
 
 export const WordNinja = {
   id: 'word-ninja',
@@ -10,198 +15,484 @@ export const WordNinja = {
   topics: ['wortarten', 'wortschatz', 'nomen'],
 
   setup(container, task, onComplete) {
+    injectWordNinjaStyles();
+
     const content = task.content;
-    
-    // We need a mixed set to have targets (Nouns) and bombs (Verbs)
-    let mixedSet;
-    if (content.mixedSets && content.mixedSets.length > 0) {
-      mixedSet = content.mixedSets[Math.floor(Math.random() * content.mixedSets.length)];
-    } else {
+    const mixedSet = content?.mixedSets?.length
+      ? content.mixedSets[Math.floor(Math.random() * content.mixedSets.length)]
+      : null;
+
+    if (!mixedSet?.nomen?.length || !mixedSet?.verben?.length) {
       onComplete({ correct: false, score: 0 });
       return;
     }
 
-    const { nomen, verben } = mixedSet;
-    if (!nomen || !verben || nomen.length === 0 || verben.length === 0) {
-      onComplete({ correct: false, score: 0 });
-      return;
-    }
-
-    let isPlaying = true;
+    const targetScore = Math.min(mixedSet.nomen.length, 5);
     let score = 0;
-    let slicedNouns = 0;
-    const targetScore = Math.min(nomen.length, 5); // We spawn exactly targetScore nouns
+    let mistakes = 0;
     let spawnedNouns = 0;
-    let lives = 3;
+    let isPlaying = false;
+    let spawnTimer = null;
+    let safetyTimer = null;
 
-    // Build UI
     container.innerHTML = `
-      <div class="ninja-container" style="position: relative; width: 100%; height: 60vh; max-height: 500px; background: #2c3e50; border-radius: 16px; overflow: hidden; touch-action: none; user-select: none;">
-        
-        <!-- HUD -->
-        <div style="position: absolute; top: 10px; left: 10px; color: white; z-index: 10; font-family: 'Fredoka One', cursive; text-shadow: 1px 1px 2px black;">
-           <div>Punkte: <span id="ninja-score">0</span>/${targetScore}</div>
-           <div style="font-size: 0.8em; color: #ecf0f1;">Schneide NOMEN!</div>
-        </div>
-        <div style="position: absolute; top: 10px; right: 10px; color: #e74c3c; z-index: 10; font-size: 1.5rem; text-shadow: 1px 1px 2px black;">
-           <span id="ninja-lives">❤️❤️❤️</span>
-        </div>
-
-        <!-- Overlay -->
-        <div id="ninja-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-            <p style="color: white; font-size: 1.5rem; text-align: center; font-family: 'Fredoka One';">Markiere die NOMEN!<br><span style="font-size: 1rem; color:#e74c3c">Achtung vor den Verben!</span></p>
-            <button id="ninja-start-btn" class="btn btn-primary btn-lg mt-3">Start</button>
+      <div class="wn-stage">
+        <div class="wn-sidekick">
+          <div class="wn-sidekick-glow"></div>
+          <img src="${ZORA?.spriteImg || ''}" alt="" aria-hidden="true">
+          <div class="wn-speech">
+            <strong>Nomen sammeln</strong>
+            <span>Verben bleiben liegen.</span>
+          </div>
         </div>
 
-        <div id="ninja-game-area" style="position: absolute; inset: 0; overflow: hidden;"></div>
+        <div class="wn-arena">
+          <div class="wn-hud">
+            <div>
+              <strong id="ninja-score">0</strong><span>/${targetScore}</span>
+              <small>Nomen</small>
+            </div>
+            <div class="wn-mistakes" id="ninja-mistakes">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div id="ninja-game-area" class="wn-game-area"></div>
+
+          <div id="ninja-overlay" class="wn-overlay">
+            <div class="wn-start-card">
+              <span class="wn-kicker">Blitzrunde</span>
+              <h3>Fang die Nomen!</h3>
+              <p>Tippe nur auf Namenwörter. Verben kosten einen Versuch.</p>
+              <button id="ninja-start-btn" type="button">Start</button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
     const gameArea = container.querySelector('#ninja-game-area');
     const scoreEl = container.querySelector('#ninja-score');
-    const livesEl = container.querySelector('#ninja-lives');
-    let gameLoopInterval;
+    const mistakesEl = container.querySelector('#ninja-mistakes');
+    const overlay = container.querySelector('#ninja-overlay');
 
-    function endGame(won) {
+    const updateMistakes = () => {
+      mistakesEl.querySelectorAll('span').forEach((dot, index) => {
+        dot.classList.toggle('is-used', index < mistakes);
+      });
+    };
+
+    const endGame = (won) => {
       if (!isPlaying) return;
       isPlaying = false;
-      clearInterval(gameLoopInterval);
-      
-      const overlay = container.querySelector('#ninja-overlay');
+      clearInterval(spawnTimer);
+      clearTimeout(safetyTimer);
+      gameArea.querySelectorAll('.wn-card').forEach(card => card.remove());
+
       overlay.style.display = 'flex';
-      overlay.innerHTML = `<h2 style="color:white">${won ? 'Geschafft! 🎉' : 'Game Over 💥'}</h2>`;
+      overlay.innerHTML = `
+        <div class="wn-start-card ${won ? 'is-win' : 'is-try'}">
+          <span class="wn-kicker">${won ? 'Geschafft' : 'Nochmal kurz üben'}</span>
+          <h3>${score}/${targetScore} Nomen</h3>
+          <p>${won ? 'Die Wortarten sitzen.' : 'Achte auf Wörter, die man tun kann.'}</p>
+        </div>
+      `;
 
       setTimeout(() => {
         onComplete({
           correct: won,
-          partial: !won && score > 0,
+          partial: !won && score >= Math.ceil(targetScore / 2),
           score: Math.round((score / targetScore) * 100),
-          details: { lives, score }
+          details: { mistakes, score }
         });
-      }, 1500);
-    }
+      }, 900);
+    };
 
-    function spawnWord() {
+    const spawnWord = () => {
       if (!isPlaying) return;
 
-      // Decide if noun (target) or verb (bomb)
-      // If we still need to spawn nouns, 60% chance for noun
-      const isBomb = (spawnedNouns >= targetScore) || (Math.random() > 0.6);
-      
-      let wordText = "";
-      if (isBomb) {
-        wordText = verben[Math.floor(Math.random() * verben.length)];
-      } else {
-        wordText = nomen[spawnedNouns % nomen.length];
-        spawnedNouns++;
-      }
+      const shouldSpawnNoun = spawnedNouns < targetScore && Math.random() > 0.34;
+      const isNoun = shouldSpawnNoun || spawnedNouns < Math.min(2, targetScore);
+      const wordText = isNoun
+        ? mixedSet.nomen[spawnedNouns++ % mixedSet.nomen.length]
+        : mixedSet.verben[Math.floor(Math.random() * mixedSet.verben.length)];
 
-      const el = document.createElement('div');
-      el.textContent = wordText;
-      // Style
-      Object.assign(el.style, {
-        position: 'absolute',
-        bottom: '-50px',
-        left: `${10 + Math.random() * 60}%`,
-        padding: '10px 20px',
-        background: 'white',
-        borderRadius: '20px',
-        fontWeight: 'bold',
-        fontSize: '1.2rem',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-        border: '3px solid',
-        borderColor: isBomb ? '#e74c3c' : '#3498db',
-        cursor: 'crosshair',
-        transition: 'transform 0.1s',
-        userSelect: 'none'
-      });
-      
-      gameArea.appendChild(el);
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `wn-card ${isNoun ? 'is-noun' : 'is-verb'}`;
+      card.textContent = wordText;
+      card.dataset.kind = isNoun ? 'noun' : 'verb';
+      card.style.left = `${8 + Math.random() * 68}%`;
+      card.style.setProperty('--wn-arc', `${Math.random() * 18 - 9}deg`);
+      gameArea.appendChild(card);
 
-      // Simple physics: throw upwards, land
-      let posY = -50; // starts below container
-      let posX = parseFloat(el.style.left);
-      let velocityY = 12 + Math.random() * 4; // jump power
-      let velocityX = (Math.random() - 0.5) * 4; // slight horizontal movement
+      const travelMs = 2600 + Math.random() * 900;
+      card.style.animationDuration = `${travelMs}ms`;
 
-      const gravity = 0.2;
-      let sliced = false;
+      const cleanupTimer = setTimeout(() => {
+        if (!card.isConnected) return;
+        if (isNoun) spawnedNouns = Math.max(0, spawnedNouns - 1);
+        card.remove();
+      }, travelMs + 120);
 
-      function update() {
-        if (!isPlaying) return;
-        velocityY -= gravity;
-        posY += velocityY;
-        posX += velocityX;
+      card.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        clearTimeout(cleanupTimer);
+        if (!isPlaying || card.classList.contains('is-hit')) return;
 
-        el.style.bottom = `${posY}px`;
-        el.style.left = `${posX}%`;
-
-        // If it falls below screen
-        if (posY < -100) {
-          el.remove();
-          // If a noun was missed, we don't lose lives, but we missed a target.
-          // For simplicity, just respawn it later if it was a noun
-          if (!isBomb && !sliced && isPlaying) {
-             spawnedNouns--; // Have another go at it
-          }
-          return;
-        }
-
-        requestAnimationFrame(update);
-      }
-
-      requestAnimationFrame(update);
-
-      // Interaction (mouse over / touch)
-      const handleSlice = (e) => {
-        if (sliced || !isPlaying) return;
-        e.preventDefault();
-        sliced = true;
-
-        if (isBomb) {
-          // Hit a bomb
-          lives--;
-          livesEl.textContent = '❤️'.repeat(Math.max(0, lives));
-          el.style.background = '#e74c3c';
-          el.style.color = 'white';
-          
-          if (lives <= 0) {
-            endGame(false);
-          }
-        } else {
-          // Hit a noun
+        card.classList.add('is-hit');
+        if (card.dataset.kind === 'noun') {
           score++;
-          slicedNouns++;
+          SoundFX.correct();
           scoreEl.textContent = score;
-          
-          // Sliced animation
-          el.style.transform = 'scale(1.2) rotate(15deg)';
-          el.style.background = '#2ecc71';
-          el.style.color = 'white';
-          el.style.opacity = '0';
-          el.style.transition = 'all 0.3s ease';
-
-          if (score >= targetScore) {
-            endGame(true);
-          }
+          card.classList.add('is-correct');
+          if (score >= targetScore) setTimeout(() => endGame(true), 240);
+        } else {
+          mistakes++;
+          SoundFX.wrong();
+          updateMistakes();
+          card.classList.add('is-wrong');
+          if (mistakes >= 3) setTimeout(() => endGame(false), 240);
         }
-      };
 
-      el.addEventListener('pointerdown', handleSlice);
-      el.addEventListener('pointerenter', (e) => {
-          // Pointer enter acts like a swipe if mouse is down
-          if (e.buttons > 0) handleSlice(e);
+        setTimeout(() => card.remove(), 260);
       });
-    }
+    };
 
     container.querySelector('#ninja-start-btn').addEventListener('click', () => {
-      container.querySelector('#ninja-overlay').style.display = 'none';
-      // Start spawning
-      gameLoopInterval = setInterval(() => {
-        if (isPlaying && (Math.random() > 0.3)) {
-          spawnWord();
-        }
-      }, 800);
+      SoundFX.minigameStart();
+      overlay.style.display = 'none';
+      isPlaying = true;
+      updateMistakes();
+      spawnWord();
+      spawnTimer = setInterval(spawnWord, 640);
+      safetyTimer = setTimeout(() => endGame(score >= targetScore), 18000);
     });
   }
 };
+
+function injectWordNinjaStyles() {
+  if (document.getElementById('word-ninja-css')) return;
+
+  const style = document.createElement('style');
+  style.id = 'word-ninja-css';
+  style.textContent = `
+    .wn-stage {
+      width: min(100%, 880px);
+      min-height: 390px;
+      display: grid;
+      grid-template-columns: minmax(160px, 0.42fr) minmax(320px, 1fr);
+      gap: 16px;
+      color: #3b2b1a;
+    }
+
+    .wn-sidekick,
+    .wn-arena {
+      position: relative;
+      overflow: hidden;
+      border: 3px solid rgba(93,64,55,0.16);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 22% 16%, rgba(255,255,255,0.76), transparent 30%),
+        linear-gradient(150deg, #fff9e9, #eaf7de);
+      box-shadow: 0 16px 30px rgba(61,43,30,0.14);
+    }
+
+    .wn-sidekick {
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .wn-sidekick-glow {
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      background: rgba(236, 72, 153, 0.18);
+      filter: blur(8px);
+    }
+
+    .wn-sidekick img {
+      position: relative;
+      z-index: 2;
+      width: min(82%, 190px);
+      max-height: 255px;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 16px rgba(0,0,0,0.2));
+      animation: wn-float 2.7s ease-in-out infinite;
+    }
+
+    .wn-speech {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 3;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 8px 18px rgba(61,43,30,0.12);
+    }
+
+    .wn-speech strong,
+    .wn-speech span {
+      display: block;
+      line-height: 1.15;
+    }
+
+    .wn-speech strong {
+      font-family: var(--font-family-display);
+      color: #ec4899;
+      font-size: 18px;
+    }
+
+    .wn-speech span {
+      margin-top: 4px;
+      font-weight: 900;
+      color: #6d4c41;
+      font-size: 13px;
+    }
+
+    .wn-arena {
+      min-height: 360px;
+      background:
+        linear-gradient(rgba(255,255,255,0.24) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.24) 1px, transparent 1px),
+        radial-gradient(circle at 72% 20%, rgba(56,189,248,0.2), transparent 30%),
+        linear-gradient(160deg, #fffaf0, #dff2cf);
+      background-size: 34px 34px, 34px 34px, auto, auto;
+    }
+
+    .wn-hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .wn-hud > div {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.88);
+      border: 2px solid rgba(93,64,55,0.1);
+      box-shadow: 0 8px 18px rgba(61,43,30,0.1);
+      font-family: var(--font-family-display);
+      color: #4e342e;
+    }
+
+    .wn-hud strong {
+      color: #2e7d32;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .wn-hud small {
+      margin-left: 6px;
+      font-family: var(--font-body);
+      font-weight: 900;
+      color: #6d4c41;
+    }
+
+    .wn-mistakes span {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #d7ccc8;
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.12);
+    }
+
+    .wn-mistakes span.is-used {
+      background: #ef5350;
+    }
+
+    .wn-game-area {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .wn-card {
+      position: absolute;
+      bottom: -76px;
+      min-width: 120px;
+      min-height: 58px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      font-family: var(--font-family-display);
+      font-size: clamp(18px, 2.4vw, 28px);
+      color: #4e342e;
+      background: #fffef8;
+      box-shadow: 0 8px 0 #d9c7a8, 0 15px 22px rgba(61,43,30,0.18);
+      animation-name: wn-rise;
+      animation-timing-function: cubic-bezier(0.18, 0.86, 0.28, 1);
+      animation-fill-mode: forwards;
+      transform: rotate(var(--wn-arc));
+      touch-action: none;
+    }
+
+    .wn-card.is-noun {
+      border: 4px solid #38bdf8;
+    }
+
+    .wn-card.is-verb {
+      border: 4px solid #ff8a65;
+      opacity: 0.92;
+    }
+
+    .wn-card.is-hit {
+      animation: none;
+      pointer-events: none;
+    }
+
+    .wn-card.is-correct {
+      background: #c8f7c5;
+      border-color: #43a047;
+      transform: scale(1.12) rotate(4deg);
+      opacity: 0;
+      transition: transform 180ms var(--ease-bounce), opacity 180ms ease;
+    }
+
+    .wn-card.is-wrong {
+      background: #ffd0c7;
+      border-color: #ef5350;
+      animation: wn-wiggle 220ms ease;
+    }
+
+    .wn-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(255, 250, 240, 0.68);
+      backdrop-filter: blur(3px);
+    }
+
+    .wn-start-card {
+      width: min(92%, 420px);
+      padding: 26px;
+      text-align: center;
+      border-radius: 26px;
+      background: #fffef8;
+      border: 3px solid rgba(93,64,55,0.16);
+      box-shadow: 0 18px 36px rgba(61,43,30,0.18);
+    }
+
+    .wn-kicker {
+      display: inline-flex;
+      margin-bottom: 10px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: #ff3366;
+      color: white;
+      font-family: var(--font-family-display);
+      font-size: 13px;
+      text-transform: uppercase;
+      box-shadow: 0 5px 0 #ad1457;
+    }
+
+    .wn-start-card h3 {
+      margin: 0;
+      font-family: var(--font-family-display);
+      font-size: clamp(34px, 5vw, 56px);
+      color: #3b2b1a;
+      line-height: 1;
+    }
+
+    .wn-start-card p {
+      margin: 12px 0 20px;
+      color: #6d4c41;
+      font-weight: 900;
+      font-size: 17px;
+    }
+
+    .wn-start-card button {
+      border: 0;
+      min-width: 180px;
+      border-radius: 999px;
+      padding: 14px 24px;
+      background: #ff3366;
+      color: white;
+      cursor: pointer;
+      font-family: var(--font-family-display);
+      font-size: 26px;
+      box-shadow: 0 7px 0 #ad1457, 0 13px 22px rgba(173,20,87,0.2);
+    }
+
+    .wn-start-card.is-win {
+      border-color: rgba(67,160,71,0.4);
+    }
+
+    .wn-start-card.is-try {
+      border-color: rgba(239,83,80,0.38);
+    }
+
+    @keyframes wn-rise {
+      0% { transform: translateY(0) rotate(var(--wn-arc)); }
+      52% { transform: translateY(-270px) rotate(calc(var(--wn-arc) * -1)); }
+      100% { transform: translateY(-520px) rotate(var(--wn-arc)); }
+    }
+
+    @keyframes wn-float {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-9px) rotate(2deg); }
+    }
+
+    @keyframes wn-wiggle {
+      0%, 100% { transform: translateX(0) rotate(var(--wn-arc)); }
+      25% { transform: translateX(-6px) rotate(-5deg); }
+      75% { transform: translateX(6px) rotate(5deg); }
+    }
+
+    @media (max-width: 760px) {
+      .wn-stage {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        min-height: 0;
+      }
+
+      .wn-sidekick {
+        min-height: 126px;
+        justify-content: flex-start;
+      }
+
+      .wn-sidekick img {
+        width: 112px;
+        max-height: 112px;
+      }
+
+      .wn-speech {
+        left: 126px;
+        right: 10px;
+        bottom: 50%;
+        transform: translateY(50%);
+      }
+
+      .wn-arena {
+        min-height: 320px;
+      }
+
+      .wn-card {
+        min-width: 106px;
+        min-height: 52px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}

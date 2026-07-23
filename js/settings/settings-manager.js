@@ -11,12 +11,16 @@ export class SettingsManager {
    */
   reset() {
     this.language = 'de';
-    this.classLevel = 2; // Default to 2nd grade
+    this.classLevel = 'klasse2';
     this.activeTopics = ['nomen', 'verben', 'adjektive', 'satzbau'];
     this.difficulty = {
-      complexity: 0.5,
-      timerSpeed: 1,
-      rewardScale: 1
+      languageComplexity: 2,
+      sentenceLength: 2,
+      timePressure: 1,
+      hintAmount: 3,
+      answerOptions: 3,
+      errorDensity: 2,
+      inputMode: 0
     };
     this.gameMode = 'local';
     this.presetId = null;
@@ -26,13 +30,24 @@ export class SettingsManager {
     this.version = "3.0.1-PRO";
   }
 
+  setGameMode(mode) {
+    this.gameMode = mode;
+  }
+
   /**
    * Set class level and filter topics accordingly
    */
   setClassLevel(level) {
-    this.classLevel = parseInt(level);
-    // Simple logic to adjust complexity based on grade
-    this.difficulty.complexity = this.classLevel / 10;
+    this.classLevel = level;
+    const gradeComplexity = {
+      vorschule: 1,
+      klasse1: 1,
+      klasse2: 2,
+      klasse3: 3,
+      klasse4: 4,
+      frei: 3
+    };
+    this.difficulty.languageComplexity = gradeComplexity[level] || 2;
   }
 
   /**
@@ -88,7 +103,7 @@ export class SettingsManager {
   loadSnapshot(snapshot) {
     if (!snapshot) return;
     this.language = snapshot.language || 'de';
-    this.classLevel = snapshot.classLevel || 2;
+    this.classLevel = snapshot.classLevel || 'klasse2';
     this.activeTopics = snapshot.activeTopics || [];
     this.difficulty = snapshot.difficulty || this.difficulty;
     this.gameMode = snapshot.gameMode || 'local';
